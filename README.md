@@ -1,5 +1,3 @@
-Collecting workspace informationBelow is a proposed README text for your project:
-
 # PhotoshopDiffusion
 
 PhotoshopDiffusion is a Photoshop plugin designed to seamlessly connect Adobe Photoshop with a running ComfyUI server. It enables prompt-to-image and image-to-image generation directly from within Photoshop using the ComfyUI engine.
