@@ -1,49 +1,85 @@
+Below is an improved, clear, and updated version of your README that reflects best practices—especially for installation via the UXP Developer Tools.
+
+---
+
 # PhotoshopDiffusion
 
-PhotoshopDiffusion is a Photoshop plugin designed to seamlessly connect Adobe Photoshop with a running ComfyUI server. It enables prompt-to-image and image-to-image generation directly from within Photoshop using the ComfyUI engine.
+**PhotoshopDiffusion** is a Photoshop plugin that seamlessly connects Adobe Photoshop with a running ComfyUI server. It lets you generate images from text prompts and perform image-to-image processing directly inside Photoshop—making AI-assisted creative workflows faster and more intuitive.
+
+---
 
 ## Features
+- **Image Inpainting:** Create a selection and add generated content directly to Photoshop.
+- **Image-to-Image Processing:** Enhance or transform images by uploading them along with an associated prompt.
+- **Real-Time Progress Updates:** A live WebSocket connection provides immediate progress feedback during image generation.
+- **Preview Integration:** Generated image previews are displayed in the plugin UI making it easy to monitor progress.
+- **Workflow Support:** Use your own workflow to fit your style.
 
-- **Prompt Generation:** Queue text prompts to generate visual outputs by leveraging a ComfyUI server.
-- **Image-to-Image Processing:** Upload input images and process them with an associated prompt.
-- **Real-Time Progress:** Uses a WebSocket connection ([`websocket.js`](js/websocket.js)) to update progress during generation.
-- **Preview Integration:** Displays generated image previews in the plugin UI ([`ui.js`](js/ui.js)).
-- **Workflow Support:** Supports different workflows (e.g., inpainting, noise matching) and utilizes configuration files located in the `python_server` folder.
+---
 
 ## Installation
 
-1. **Clone the Repository**  
-   Clone the project repository to your local machine.
+### 1. Clone the Repository
 
-2. **Install Dependencies**  
-   Navigate to the project folder and run:
-   ```sh
-   npm install
-   ```
-   This installs required dependencies like `socket.io-client` as defined in package.json.
+Clone the project repository to your local machine:
 
-3. **Set Up the ComfyUI Server**  
-   Ensure you have a ComfyUI server running (by default on `127.0.0.1:8188`) as described in the python_server documentation. Install Python dependencies by running:
-   ```sh
-   pip install -r python_server/requirements.txt
-   ```
+```sh
+git clone https://github.com/yourusername/PhotoshopDiffusion.git
+```
 
-4. **Install the Plugin in Photoshop**  
-   Run the provided install.bat script or manually copy the plugin folder into your Photoshop plugins directory, following the guidelines in the Adobe UXP documentation.
+### 2. Install Dependencies
 
-5. **Launch Photoshop**  
-   Open Photoshop and activate the plugin from the Plugins panel. The plugin UI is defined in index.html and initialized via main.js.
+Make sure you have [Node.js]() installed, if you haven't already.
+
+Afterwards run `install.bat` in the plugins folder.
+This will install all python and javascript dependancies.
+
+### 3. Set Up the ComfyUI Server
+
+Ensure that a ComfyUI server is running (by default at `127.0.0.1:8188`). 
+
+### 4. Install the Plugin in Photoshop
+
+1. **Install UXP Developer Tools:**  
+   If you haven’t already, install and open the UXP Developer Tools from the Adobe Creative Cloud app (see [Adobe UXP Developer Tool documentation](https://developer.adobe.com/photoshop/uxp/2022/guides/devtool/installation/) for details).
+
+2. **Launch Photoshop:**  
+   Open Adobe Photoshop.
+
+3. **Add Your Plugin:**
+   - Open the UXP Developer Tools.
+   - Click **Add Plugin**.
+   - Navigate to the folder where you cloned PhotoshopDiffusion and select `mainfest.json`.
+   - Click **Load** next to the newly appeared plugin.
+   
+**Important:** The plugin needs to be loaded from the UXP Developer Tools every time Photoshop is restarted. This is due to the limitations of Adobe.
+---
 
 ## Usage
 
-- Click the **Queue** button to initiate generation. The plugin connects to the ComfyUI server via a WebSocket (see websocket.js) and displays progress updates.
-- For image improvements and workflows, choose the appropriate menu items from the plugin interface.
-- On completion, generated images are stored in the output_images folder.
+- **Queue Generation:**  
+
+
+  Click the **Queue** button within the plugin UI to start image generation. The plugin will connect to the ComfyUI server via a WebSocket and display live progress updates.
+
+- **Image-to-Image and Workflow Options:**  
+  For image improvements or specific workflows (e.g., inpainting, noise matching), select the appropriate options from the plugin’s menu.
+
+- **Output:**  
+  Once the generation completes, images are saved automatically in the `output_images` folder.
+
+---
 
 ## Contributing
 
-Feel free to open issues or submit pull requests if you have suggestions or improvements.
+I welcome your feedback, bug reports, and pull requests. Feel free to open an issue or submit a pull request if you have suggestions or improvements.
+
+---
 
 ## License
 
-This project is licensed under the Apache-2.0 license. See LICENSE for details.
+This project is licensed under the [Apache-2.0 License](LICENSE).
+
+---
+Happy creating!
+

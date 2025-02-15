@@ -1,0 +1,3 @@
+[submodule "python_server/comfyui_api"]
+	path = python_server/comfyui_api
+	url = https://github.com/SmokeyRGB/comfyui_api.git
