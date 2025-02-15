@@ -1,0 +1,243 @@
+{
+  "id": "Photoshop-ComfyUI_v2",
+  "name": "Photoshop-ComfyUI Plugin 2",
+  "version": "1.0.0",
+  "main": "index.html",
+  "host": [
+    {
+      "app": "PS",
+      "minVersion": "22.0.1"
+    }
+  ],
+  "manifestVersion": 5,
+  "entrypoints": [
+    {
+      "type": "command",
+      "id": "showAlert",
+      "label": "Show alert"
+    },
+
+
+
+    {
+      "type": "panel",
+      "id": "vanilla",
+      "minimumSize": {
+        "width": 360,
+        "height": 370
+      },
+      "maximumSize": {
+        "width": 2000,
+        "height": 2000
+      },
+      "preferredDockedSize": {
+        "width": 230,
+        "height": 300
+      },
+      "preferredFloatingSize": {
+        "width": 360,
+        "height": 550
+      },
+      "icons": [
+        {
+          "width": 32,
+          "height": 32,
+          "path": "icons/icon_D.png",
+          "scale": [
+            1,
+            2
+          ],
+          "theme": [
+            "dark",
+            "darkest"
+          ],
+          "species": [
+            "generic"
+          ]
+        },
+        {
+          "width": 32,
+          "height": 32,
+          "path": "icons/icon_N.png",
+          "scale": [
+            1,
+            2
+          ],
+          "theme": [
+            "lightest",
+            "light"
+          ],
+          "species": [
+            "generic"
+          ]
+        }
+      ],
+      "label": {
+        "default": "Photoshop to ComfyUI by SmokeyRGB"
+      }
+    },
+
+
+
+    {
+      "type": "panel",
+      "id": "popout",
+      "minimumSize": {
+        "width": 230,
+        "height": 40
+      },
+      "maximumSize": {
+        "width": 350,
+        "height": 40
+      },
+      "preferredDockedSize": {
+        "width": 230,
+        "height": 40
+      },
+      "preferredFloatingSize": {
+        "width": 230,
+        "height": 40
+      },
+      "icons": [
+        {
+          "width": 32,
+          "height": 32,
+          "path": "icons/icon_D.png",
+          "scale": [
+            1,
+            2
+          ],
+          "theme": [
+            "dark",
+            "darkest"
+          ],
+          "species": [
+            "generic"
+          ]
+        },
+        {
+          "width": 32,
+          "height": 32,
+          "path": "icons/icon_N.png",
+          "scale": [
+            1,
+            2
+          ],
+          "theme": [
+            "lightest",
+            "light"
+          ],
+          "species": [
+            "generic"
+          ]
+        }
+      ],
+      "label": {
+        "default": "Mini-Queue"
+      }
+    },
+
+
+    {
+      "type": "panel",
+      "id": "promptInfo",
+      "minimumSize": {
+        "width": 250,
+        "height": 280
+      },
+      "maximumSize": {
+        "width": 350,
+        "height": 280
+      },
+      "preferredDockedSize": {
+        "width": 250,
+        "height": 280
+      },
+      "preferredFloatingSize": {
+        "width": 250,
+        "height": 280
+      },
+      "icons": [
+        {
+          "width": 32,
+          "height": 32,
+          "path": "icons/icon_D.png",
+          "scale": [
+            1,
+            2
+          ],
+          "theme": [
+            "dark",
+            "darkest"
+          ],
+          "species": [
+            "generic"
+          ]
+        },
+        {
+          "width": 32,
+          "height": 32,
+          "path": "icons/icon_N.png",
+          "scale": [
+            1,
+            2
+          ],
+          "theme": [
+            "lightest",
+            "light"
+          ],
+          "species": [
+            "generic"
+          ]
+        }
+      ],
+      "label": {
+        "default": "Prompt Information 💡"
+      }
+    }
+
+
+  ],
+  "icons": [
+    {
+      "width": 23,
+      "height": 23,
+      "path": "icons/dark.png",
+      "scale": [
+        1,
+        2
+      ],
+      "theme": [
+        "darkest",
+        "dark",
+        "medium"
+      ]
+    },
+    {
+      "width": 23,
+      "height": 23,
+      "path": "icons/light.png",
+      "scale": [
+        1,
+        2
+      ],
+      "theme": [
+        "lightest",
+        "light"
+      ]
+    }
+  ],
+  "requiredPermissions": {
+    "localFileSystem": "fullAccess",
+    "clipboard":  "readAndWrite",
+    "launchProcess": {
+      "schemes": [ "https" ],
+      "extensions": [
+        ""
+      ]
+    },
+    "network": {
+      "domains": "all"
+    }
+  }
+}

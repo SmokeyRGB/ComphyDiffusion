@@ -1,0 +1,230 @@
+body {
+    color: white;
+    padding: 0 16px;
+}
+
+  li:before {
+    content: '• ';
+    width: 3em;
+}
+
+.descriptor {
+    color: #bbbbbb;
+    display: inline-flex;
+    width: 30px;
+    height: 35px;
+    padding-top: 12px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.container {
+    border-radius: 4px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+#image-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* Main panel fills available space and becomes the relative container */
+#MainPanel {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    display: flex; /* Add flex display */
+    flex-direction: column; /* Stack children vertically */
+    background: linear-gradient(0deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.0) 50%, rgba(0,0,0,0.6) 100%);
+}
+  
+
+/* generationPreview fills its container; you can update its content via JS */
+#generationPreview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    background-position: center;
+}
+
+#generationPreview img {
+    /* Remove fixed dimensions if any */
+    /* Ensure positioning is relative to allow centering */
+    position: relative;
+    height: 1024px;
+    width: auto;
+    top: 0;
+    left: 0;
+    cursor: grab;
+    will-change: transform;
+    transform-origin: center;
+    transition: width 0.2s ease, height 0.2s ease, left 0.2s ease, top 0.2s ease;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+
+#loadingCircle {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #3498db;
+    border-top: 5px solid #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.customButton:hover{
+    background-color: #582929;
+    font-size: 14px;
+}
+.customButton {
+    border: 2px solid rgb(114, 114, 114);
+    border-radius: 11px;
+    padding: 4px;
+    margin: 2px;
+    font-size: 12px;
+    display: inline-flex;
+    background-color: rgb(52, 52, 52);
+}
+
+
+.advanced-wrapper {
+    transition: opacity 0.3s ease-in-out;
+    /* Keep the element in the layout even when hidden; optionally, you can also animate max-height if layout matters */
+  }
+  
+  /* Visible state */
+  .advanced-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  /* Hidden state */
+  .advanced-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+.generation_options {
+    backdrop-filter: blur(2px);
+    padding: 10px;
+    margin: 10px;
+    border-radius: 8px;
+}
+
+
+    /* Background Preview fills the entire MainPanel */
+#backgroundPreview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    overflow: hidden;
+}
+
+    /* Prompt overlay is placed at the bottom and adjusts to content */
+#promptOverlay {    
+    position: relative; /* Change to fixed */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 500px; /* Limit width to 500px */
+    height: auto; /* Let it size to content */
+    border-radius: 5px 5px 0 0;
+    padding: 5px 5px 10px; /* Added top padding to account for overlapping button */
+    box-sizing: border-box;
+    color: #fff;
+    
+    /* Flex settings for child elements */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    /* Max height with scrolling if needed */
+    max-height: 50vh;
+    overflow-y: auto;
+    
+    /* Prevent any unwanted margin/spacing */
+    margin: 0;
+    z-index: 9;
+}
+
+#lowerThird {    
+    position: fixed; /* Change to fixed */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: auto; /* Let it size to content */
+    background: linear-gradient(0deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 68%, rgba(0,0,0,0) 100%);
+    padding: 5px 5px 10px; /* Added top padding to account for overlapping button */
+    box-sizing: border-box;
+    
+    /* Flex settings for child elements */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+
+    /* Max height with scrolling if needed */
+    max-height: 50vh;
+    overflow-y: auto;
+    
+    /* Prevent any unwanted margin/spacing */
+    margin: 0;
+    z-index: 9;
+}
+
+#queueButtonContainer {
+    z-index: 999; /* Increase z-index to appear above promptOverlay */
+    position: absolute;
+    bottom: 145px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+}
+
+#queueButton {
+    position: relative;
+    min-width: 120px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    z-index: 1000;  /* Ensure the button sits on top */
+}
+
+    /* Style for insertion options (dropdowns and action buttons) */
+.insertion-options {
+        display: flex;
+        position: absolute;
+        width: 100%;
+        background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.0));
+    top: 0;
+    left: 0;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+    /* Other prompt option styling */
+.prompt-option {
+    display: contents;
+    text-align: center;
+    margin: 0;
+    padding: 2px 0;
+    min-height: fit-content;
+}
+
+#negativePrompt, #steps, #cfg {
+    transition: opacity 0.0s ease;
+}

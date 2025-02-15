@@ -1,0 +1,231 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <script src="main.js"></script>
+  <!--<script src="updatePreview.js"></script>-->
+  <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+  <!-- MAIN PANEL -->
+  <div id="MainPanel">
+    
+    <!-- Background Preview covers entire panel -->
+    <div id="backgroundPreview">
+      <div id="generationPreview">
+        <!-- The image element is appended/updated via JS -->
+      </div>
+    </div>
+    <!-- Insertion Options & Generation Options -->
+    <div class="insertion-options">
+        <sp-dropdown id="copyOrInsert" size="m" style="width: 76px; font-size: 13px; margin: 0; padding: 0;" placeholder="Paste">
+        <sp-menu slot="options">
+            <sp-menu-item>Paste</sp-menu-item>
+            <sp-menu-item>Copy</sp-menu-item>
+        </sp-menu>
+        </sp-dropdown>
+        <sp-dropdown id="insertSettings" size="m" style="width: 120px; font-size: 13px; margin: 0; padding: 0;" placeholder="Whole Layer">
+        <sp-menu slot="options">
+            <sp-menu-item id="wholeLayerOption">Whole Layer</sp-menu-item>
+            <sp-menu-item id="onlyChangesOption">Only Changes</sp-menu-item>
+            <sp-menu-item id="maskedLayerOption">Masked Layer</sp-menu-item>
+        </sp-menu>
+        </sp-dropdown>
+        <sp-action-button id="insertAsLayer">
+        <div slot="icon" style="fill: #177fff;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+            <defs />
+            <path d="M4.5 4H13V1.5a.5.5 0 0 0-.5-.5h-11a.5.5 0 0 0-.5.5v11a.5.5 0 0 0 .5.5H4V4.5a.5.5 0 0 1 .5-.5Z" class="fill" />
+            <path d="M16.5 5h-11a.5.5 0 0 0-.5.5v11a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-11a.5.5 0 0 0-.5-.5Zm-2 6.75h-2.75v2.75h-1.5v-2.75H7.5v-1.5h2.75V7.5h1.5v2.75h2.75Z" class="fill" />
+            </svg>
+        </div>
+        </sp-action-button>
+    </div>
+
+
+    <!-- Prompt Overlay goes first in DOM but appears visually below due to column-reverse -->
+     <div id="lowerThird">
+        <div id="promptOverlay">
+        <!-- Prompt Controls -->
+        <div class="prompt-option">
+                <sp-textarea id="positivePrompt" rows="1" style="width: 100%; text-align: center;" placeholder="Positive Prompt"></sp-textarea>
+        </div>
+
+        <div class="prompt-option" style="display: none;">
+            <sp-textfield id="negativePrompt" style="width: 100%; text-align: center;" placeholder="Negative Prompt"></sp-textfield>
+        </div>
+
+        <!-- Advanced Prompt Toggle and Seed Controls -->
+        <div class="prompt-option" style="
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        width: 100%;
+        gap: 0.5rem;
+      ">
+      
+        <div id="advPromptingButton" title="Toggle advanced prompt settings"
+             style="display: flex; align-items: center; justify-content: center; height: 30px; width: 40px; border-radius: 4px;">
+          <sp-icon id="advPromptingIcon" size="s" name="ui:More"></sp-icon>
+        </div>
+      
+        <sp-textfield id="steps" placeholder="Steps" 
+             style="flex-grow: 1; min-width: 50px; max-width: 50px; display: none;"></sp-textfield>
+      
+        <sp-textfield id="seed" placeholder="Seed" 
+             style="flex-grow: 2; min-width: 150px; max-width: 175px;"></sp-textfield>
+      
+        <sp-textfield id="cfg" placeholder="CFG" 
+             style="flex-grow: 1; min-width: 50px; max-width: 50px; display: none;"></sp-textfield>
+      
+        <sp-action-button id="randomizeSeed"
+             style="display: flex; align-items: center; justify-content: center;">
+          🎲
+        </sp-action-button>
+      
+      </div>
+        
+    </div>
+     </div>
+    
+
+    <div id="queueButtonContainer">
+        <!-- Progress element behind the button -->
+        <sp-button id="queueButton" variant="cta" style="z-index: 5;">Queue</sp-button>
+        <div id="queueButtonProgress" style="
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 0;
+            height: 97%;
+            background-color: rgba(255, 255, 255, 0.5);
+            transition: width 0.3s ease, left 0.3s ease;
+            z-index: -1;
+            pointer-events: none;
+            border-radius: 16px;">
+        </div>
+    </div>
+
+
+
+    <!-- Main Panel Dialogs -->
+    <sp-dialog id="aboutDialog">
+      <sp-heading slot="title">About this plugin</sp-heading>
+      <sp-icon slot="icon" size="m" name="ui:InfoMedium"></sp-icon>
+      <sp-body slot="description">
+        This plugin is made by <a href='https://github.com/SmokeyRGB'>SmokeyRGB</a>.<br />
+        Made for personal use only. Please don't be an ass and steal other peoples work.<br />
+        If you are happy with my work and want to support me working on stuff like this <a id="smokeyRGBgithub" href='https://ko-fi.com/smokeyrgb'>Buy me a coffee ☕</a><br /><br />
+        This plugin is free and will stay free. I am thankful for all the open-source work the AI-community has done<br />
+        so far and wanted to contribute my part to an open and accessible technology for everyone.<br /><br />
+        Special thanks to <a href='https://github.com/NimaNzrii'>Nima Nazari</a> who developed the Photoshop Connection node this is based on.<br />
+        He started the whole project by digging out the Photoshop API from Adobe's chaotic documentation.
+      </sp-body>
+      <sp-button-group slot="buttongroup">
+        <sp-button id="hideAbout" variant="primary">Close</sp-button>
+      </sp-button-group>
+    </sp-dialog>
+    <sp-dialog id="selectionErrorDialog">
+      <sp-heading slot="title">No active selection</sp-heading>
+      <sp-icon slot="icon" size="m" name="ui:AlertMedium"></sp-icon>
+      <sp-body style="margin-bottom: 0px" slot="description">
+        There is no active selection.<br />
+        Please make a selection before queuing.<br />
+        <p style="font-size: 12px;">More information on <a href="https://creativecloud.adobe.com/learn/photoshop/web/selection-tools-basics">how to make a selection</a>.</p>
+      </sp-body>
+      <sp-button-group style="margin: 0px" slot="buttongroup">
+        <sp-button id="hideSelectionError" variant="primary">Got it</sp-button>
+      </sp-button-group>
+    </sp-dialog>
+    <sp-dialog id="pythonHookErrorDialog">
+      <sp-heading slot="title">Python websocket not running.</sp-heading>
+      <sp-icon slot="icon" size="m" name="ui:AlertMedium"></sp-icon>
+      <sp-body style="margin-bottom: 0px" slot="description">
+        The python websocket to communicate with ComfyUI is not running.<br />
+        To use features like "Cancel Queue", you'll have to start the server.<br /><br />
+        Photoshop will prompt you if it is allowed to open the path where you can start the server.<br />
+        Either allow and start the server, or block and don't use the features.<br /><br />
+        Next, you'll need to click on the sandwich menu top right of the plugin,<br />
+        and choose "Connect to ComfyUI Websocket" under Debug Options.
+      </sp-body>
+      <sp-button-group style="margin: 0px" slot="buttongroup">
+        <sp-button id="hidePythonHookError" variant="primary">Got it</sp-button>
+      </sp-button-group>
+    </sp-dialog>
+  </div>
+
+  <footer></footer>
+
+  <!-- MINI QUEUE PANEL -->
+  <div id="miniQueuePanel" style="margin: 5px">
+    <div style="display: inline-flex; width: 100%">
+      <sp-textfield id="mini_positivePrompt" style="width: 100%; text-align: center" placeholder="Positive Prompt"></sp-textfield>
+      <sp-action-button size="m" id="mini_queueButton">Queue</sp-action-button>
+    </div>
+  </div>
+
+  <!-- PROMPT INFORMATION PANEL -->
+  <div id="promptInfoPanel" style="margin: 5px">
+    <div style="display: inline-flex; width: 100%; overflow: hidden; white-space: nowrap"> 
+      <table>
+        <thead></thead>
+        <tbody>
+          <tr>
+            <td>
+              <sp-textfield size="s" style="width:70%" id="posPromptInfo">
+                <sp-label slot="label" style="padding:0px">Positive Prompt</sp-label>
+              </sp-textfield>
+              <sp-action-button disabled id="promptInfoRecyclePositiveButton" class="promptInfoButtons" size="s">♻</sp-action-button>
+              <sp-action-button disabled id="promptInfoCopyPositiveButton" class="promptInfoButtons" size="s">📋</sp-action-button>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <sp-textfield size="s" style="width:70%" id="negPromptInfo">
+                <sp-label slot="label" style="padding:0px">Negative Prompt</sp-label>
+              </sp-textfield>
+              <sp-action-button disabled id="promptInfoRecycleNegativeButton" class="promptInfoButtons" size="s">♻</sp-action-button>
+              <sp-action-button disabled id="promptInfoCopyNegativeButton" class="promptInfoButtons" size="s">📋</sp-action-button>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <sp-textfield size="s" style="width:70%" id="seedPromptInfo">
+                <sp-label slot="label" style="padding:0px">Seed</sp-label>
+              </sp-textfield>
+              <sp-action-button disabled id="promptInfoRecycleSeedButton" class="promptInfoButtons" size="s">♻</sp-action-button>
+              <sp-action-button disabled id="promptInfoCopySeedButton" class="promptInfoButtons" size="s">📋</sp-action-button>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <sp-textfield size="s" style="width:70%" id="stepsPromptInfo">
+                <sp-label slot="label" style="padding:0px">Steps</sp-label>
+              </sp-textfield>
+              <sp-action-button disabled id="promptInfoRecycleStepsButton" class="promptInfoButtons" size="s">♻</sp-action-button>
+              <sp-action-button disabled id="promptInfoCopyStepsButton" class="promptInfoButtons" size="s">📋</sp-action-button>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <sp-textfield size="s" style="width:70%" id="cfgPromptInfo">
+                <sp-label slot="label" style="padding:0px">CFG</sp-label>
+              </sp-textfield>
+              <sp-action-button disabled id="promptInfoRecycleCfgButton" class="promptInfoButtons" size="s">♻</sp-action-button>
+              <sp-action-button disabled id="promptInfoCopyCfgButton" class="promptInfoButtons" size="s">📋</sp-action-button>
+            </td>
+          </tr>
+          <tr style="text-align: center; padding: 10px">
+            <td>
+              <sp-action-button id="getEmbeddedPromptInfoButton" size="s">Get Prompt</sp-action-button>
+              <sp-action-button disabled id="useAllExtractedPromptInfo" class="promptInfoButtons" size="s">Use All</sp-action-button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  
+</body>
+</html>
