@@ -342,7 +342,7 @@ const runStampRemove = async () => {
                 {
                     _obj: "select",
                     _target: [
-                        { _ref: "historyState", _offset: -6 }
+                        { _ref: "historyState", _offset: -5 }
                     ],
                     _isCommand: true
                 }
@@ -487,8 +487,10 @@ const insertAsLayer = async (insertAs, tempFolderPath) => {
     //     console.log("Copying...");
     //     await copyImageToClipboard();
     // } else {
-    //     await renameLayer("✨ ComfyPhotoshop Layer");
+    //     
     // }
+    await renameLayer("✨ ComfyPhotoshop Layer");
+
 
     // WIP: Reload selection if it existed
     if (hadSelection) {
