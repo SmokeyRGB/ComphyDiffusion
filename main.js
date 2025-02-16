@@ -38,6 +38,9 @@ let websocket_url = 'ws://127.0.0.1:6789'
 let receivedMessages = [];
 let cancelInProgress = false;
 
+// NEW: Global document change flag
+let documentChanged = false;
+
 //const client = new ComfyUIClient(serverAddress, clientId);
 
 //ONLOAD STUFF
@@ -61,6 +64,27 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     console.log("Done.")
 }, false);
+
+// NEW: Listen for document change events and set the global flag.
+photoshop.action.addNotificationListener([
+    { event: "hide" },
+    { event: "set" },
+    { event: "addTo" },
+    { event: "select" },
+    { event: "copyToLayer" },
+    { event: "delete" },
+    { event: "make" },
+    { event: "move" }
+], (eventName, descriptor) => {
+    documentChanged = true;
+});
+
+// Reset flag when a new document opens.
+photoshop.action.addNotificationListener([{ event: "newDocument" }], () => {
+    console.log("New document opened. Creating temporary selection channel.")
+    documentChanged = false;
+    imageActions.createSelectionChannel();
+});
 
 // Make savePrompt available to seed_control.js
 window.savePrompt = () => promptHandling.savePrompt(tempFolderPath);
@@ -163,8 +187,14 @@ const run_queue = async () => {
         try {
             await imageActions.saveSelection();
             console.log("Selection saved.")
-            await imageActions.runStampRemove();
-            console.log("Stamp Removed.")
+            // NEW: Only proceed if document has been modified.
+            if (documentChanged && !app.activeDocument.saved) {
+                console.log("Document has been modified. Running stamp remove.")
+                await imageActions.runStampRemove();
+            }
+            
+            // Reset flag after processing.
+            documentChanged = false;
 
             // Send image-to-image request to Python server
             const data = {
@@ -375,7 +405,7 @@ document.getElementById("advPromptingButton").addEventListener('click', ui.hideA
 
 document.getElementById("insertAsLayer").addEventListener('click', () => {
     console.log("Inserting as Layer");
-    imageActions.insertAsLayer(insertToClipboard, insertAs, tempFolderPath);
+    imageActions.insertAsLayer(insertAs, tempFolderPath);
 });
 
 document.getElementById("copyOrInsert").addEventListener("change", evt => {

@@ -273,6 +273,7 @@ const runStampRemove = async () => {
             console.log("Temporary files created for inpaint and RGB images.");
             const token = fs.createSessionToken(tempFileAlpha);
             const rgbtoken = fs.createSessionToken(tempFileRGB);
+            
             await batchPlay([
                 // MAKE BLANK LAYER
                 {
@@ -335,24 +336,6 @@ const runStampRemove = async () => {
                     alphaChannels: false,
                     embedProfiles: false,
                     saveStage: { _enum: "saveStageType", _value: "saveSucceeded" },
-                    _options: { dialogOptions: "dontDisplay" }
-                },
-                // ACTIVATE QUICKMASK
-                {
-                    _obj: "set",
-                    _target: [
-                        { _ref: "property", _property: "quickMask" },
-                        { _ref: "document", _enum: "ordinal", _value: "targetEnum" }
-                    ],
-                    _options: { dialogOptions: "dontDisplay" }
-                },
-                // CLEAR QUICKMASK
-                {
-                    _obj: "clearEvent",
-                    _target: [
-                        { _ref: "property", _property: "quickMask" },
-                        { _ref: "document", _enum: "ordinal", _value: "targetEnum" }
-                    ],
                     _options: { dialogOptions: "dontDisplay" }
                 },
                 // ROLLBACK (select an earlier history state)
@@ -454,8 +437,8 @@ const addNoiseLayer = async () => {
     }, { commandName: "Add Noise Layer" });
 };
 
-const insertAsLayer = async (insertToClipboard, insertAs, tempFolderPath) => {
-    console.log((insertToClipboard ? "Copying to Clipboard: " : "Inserting as Layer: ") + insertAs);
+const insertAsLayer = async (insertAs, tempFolderPath) => {
+    //console.log((insertToClipboard ? "Copying to Clipboard: " : "Inserting as Layer: ") + insertAs);
     let prompt = await prompt_handeling.loadPrompt(tempFolderPath);
     let hadSelection = await utils.selectionActive();
 
@@ -500,12 +483,12 @@ const insertAsLayer = async (insertToClipboard, insertAs, tempFolderPath) => {
             break;
     }
 
-    if (insertToClipboard) {
-        console.log("Copying...");
-        await copyImageToClipboard();
-    } else {
-        await renameLayer("✨ ComfyPhotoshop Layer");
-    }
+    // if (insertToClipboard) {
+    //     console.log("Copying...");
+    //     await copyImageToClipboard();
+    // } else {
+    //     await renameLayer("✨ ComfyPhotoshop Layer");
+    // }
 
     // WIP: Reload selection if it existed
     if (hadSelection) {
