@@ -13,6 +13,8 @@ const promptHandling = require('./js/prompt_handeling.js');
 const websocketModule = require('./js/websocket.js'); // Import websocket module
 const utils = require('./js/utils.js'); // Import utils module
 
+
+
 const shell = require("uxp").shell;
 
 let tempFolderPath;
@@ -178,19 +180,28 @@ let generationState = "idle"; // Add a state logger
 
 
 const run_queue = async () => {
+    const prompt = await promptHandling.loadPrompt(tempFolderPath);
+
     if (generationState === "running") {
         await cancel_queue();
         return;
     }
-    const prompt = await promptHandling.loadPrompt(tempFolderPath);
+
     if (await utils.selectionActive()) {
         try {
             await imageActions.saveSelection();
             console.log("Selection saved.")
+
             // NEW: Only proceed if document has been modified.
             if (documentChanged && !app.activeDocument.saved) {
                 console.log("Document has been modified. Running stamp remove.")
-                await imageActions.runStampRemove();
+                try {
+                    // New export routine using Imaging API instead of batchPlay
+                    await imageActions.runNewExport(tempFolderPath);
+                    
+                } catch (error) {
+                    console.error("Error during export:", error);
+                }
             }
             
             // Reset flag after processing.
@@ -224,7 +235,8 @@ const run_queue = async () => {
     } else {
         document.getElementById('selectionErrorDialog').setAttribute('open');
     }
-}
+
+};
 
 const cancel_queue = async () => {
     if (generationState === "running") {
@@ -238,6 +250,9 @@ const cancel_queue = async () => {
         console.log("No generation running.");
     }
 }
+
+// Update queue button click listener if needed
+document.getElementById("queueButton").addEventListener('click', run_queue);
 
 //####### EVENT TRIGGERS ########
 
