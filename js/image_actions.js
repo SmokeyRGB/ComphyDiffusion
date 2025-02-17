@@ -4,9 +4,21 @@
 const photoshop = require("photoshop");
 const app = photoshop.app;
 const batchPlay = photoshop.action.batchPlay;
+const imaging = require("photoshop").imaging;
 const fs = require("uxp").storage.localFileSystem;
 const prompt_handeling = require('./prompt_handeling');
 const utils = require('./utils');
+
+const pngModule = require("../dist/bundle.js");
+
+// Log to verify correct structure
+console.log("Checking module export:", pngModule);
+
+// Correctly access encodeToPNG_UPNG from Plugin
+const encodeToPNG_UPNG = pngModule.Plugin.encodeToPNG_UPNG;
+if (typeof encodeToPNG_UPNG !== "function") {
+    throw new Error("encodeToPNG_UPNG is not properly imported!");
+}
 
 // ────────────────────────────────────────────────────────────────
 // Create a temporary selection channel (using a rectangle then duplicating it)
@@ -646,6 +658,269 @@ const autoColorMatchSkinTones = async (refColorObj, targetColorObj) => {
 };
 
 
+// NEW MODULE: Image Extraction using the Imaging API
+const extractDocumentPixels = async () => {
+    let pixelData = null;
+    await photoshop.core.executeAsModal(async () => {
+        try {
+            // Retrieve pixel data from the active document as a PhotoshopImageData instance.
+            pixelData = await imaging.getPixels({});
+        } catch (error) {
+            console.error("Error extracting document pixels:", error);
+            throw error;
+        }
+    });
+    return pixelData;
+};
+
+// NEW MODULE: Updated Retrieve selection mask using the Imaging API wrapped in executeAsModal
+const getSelectionMask = async () => {
+    let mask = null;
+    await photoshop.core.executeAsModal(async () => {
+        try {
+            const selectionObj = await imaging.getSelection({});
+            console.log("Selection object:", selectionObj);
+            
+            const docWidth = app.activeDocument.width;
+            const docHeight = app.activeDocument.height;
+
+            // Initialize mask with zeros (fully transparent)
+            mask = new Array(docHeight);
+            for (let i = 0; i < docHeight; i++) {
+                mask[i] = new Array(docWidth).fill(0);
+            }
+
+            // Get selection bounds
+            const bounds = selectionObj.sourceBounds; // { left, top, right, bottom }
+            const selWidth = bounds.right - bounds.left;
+            const selHeight = bounds.bottom - bounds.top;
+            console.log("Selection bounds:", bounds);
+
+            // Retrieve selection grayscale data (0–255)
+            const data = await selectionObj.imageData.getData({ chunky: true });
+            console.log("Selection mask data length:", data.length);
+
+            // Store grayscale values in the mask array
+            for (let y = 0; y < selHeight; y++) {
+                for (let x = 0; x < selWidth; x++) {
+                    const idx = y * selWidth + x;
+                    const alphaValue = data[idx]; // 0 (no selection) → 255 (fully selected)
+                    
+                    const docX = bounds.left + x;
+                    const docY = bounds.top + y;
+
+                    if (docX < docWidth && docY < docHeight) {
+                        mask[docY][docX] = alphaValue; // Store alpha (0–255)
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error getting selection mask:", error);
+        }
+    }, { commandName: "Get Selection Mask" });
+    return mask;
+};
+
+
+// NEW MODULE: Process pixels to apply selection mask (set alpha=0 inside selection)
+const applySelectionMask = (pixels, mask, width, height) => {
+    if (!pixels || pixels.length !== width * height * 4) {
+        throw new Error(`Invalid pixel data. Expected ${width * height * 4}, got ${pixels ? pixels.length : 0}`);
+    }
+
+    console.log("Applying selection mask to image:", mask);
+    
+    // Create a copy for the masked image
+    const maskedPixels = new Uint8Array(pixels);
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const index = (y * width + x) * 4; // RGBA format (4 bytes per pixel)
+
+            // Get the grayscale alpha value (0–255)
+            const alphaMaskValue = mask[y]?.[x] ?? 0;
+
+            if (alphaMaskValue > 0) {
+                // Blend the selection mask with the existing alpha channel
+                const originalAlpha = maskedPixels[index + 3]; // Existing alpha value (0–255)
+                const newAlpha = Math.round((originalAlpha * (1 - alphaMaskValue / 255))); // Scale alpha
+                
+                maskedPixels[index + 3] = newAlpha; // Apply blended alpha
+            }
+        }
+    }
+
+    console.log("Selection mask applied successfully.");
+    return maskedPixels;
+};
+
+
+
+// Helper: Convert RGBA pixel data to RGB by removing alpha channel
+const removeAlphaFromPixelBuffer = async (psImageData) => {
+    const width = psImageData.imageData.width;
+    const height = psImageData.imageData.height;
+
+    // Retrieve RGBA data
+    const data = await psImageData.imageData.getData({ chunky: true });
+
+    console.log(`Original pixel data length: ${data.length}, expected: ${width * height * 4}`);
+
+    if (data.length !== width * height * 4) {
+        throw new Error("Pixel buffer size mismatch. Possible corruption or invalid extraction.");
+    }
+
+    // Convert RGBA → RGB
+    const rgbData = new Uint8Array(width * height * 3);
+
+    for (let i = 0, j = 0; i < data.length; i += 4, j += 3) {
+        rgbData[j] = data[i];     // Red
+        rgbData[j + 1] = data[i + 1]; // Green
+        rgbData[j + 2] = data[i + 2]; // Blue
+    }
+
+    console.log(`Converted to RGB buffer length: ${rgbData.length}, expected: ${width * height * 3}`);
+
+    return { width, height, rgbData };
+};
+
+// Helper: Extract RGBA pixel buffer from PhotoshopImageData
+const extractRGBAFromPixelBuffer = async (psImageData) => {
+    const width = psImageData.imageData.width;
+    const height = psImageData.imageData.height;
+
+    // Retrieve full RGBA data
+    const data = await psImageData.imageData.getData({ chunky: true });
+
+    console.log(`Extracted RGBA buffer length: ${data.length}, expected: ${width * height * 4}`);
+
+    if (data.length !== width * height * 4) {
+        throw new Error("Pixel buffer size mismatch. Possible corruption or invalid extraction.");
+    }
+
+    return { width, height, rgbaData: data };
+};
+
+
+// Helper: Encode pixel buffer to JPEG using imaging API
+const encodeToJPEG = async (psImageData) => {
+    try {
+        // Convert to RGB (JPEG does not support alpha)
+        const { width, height, rgbData } = await removeAlphaFromPixelBuffer(psImageData);
+
+        // Create valid PhotoshopImageData from the new buffer
+        const imageDataNoAlpha = await imaging.createImageDataFromBuffer(rgbData, {
+            width: width,
+            height: height,
+            components: 3, // RGB
+            colorSpace: "RGB",
+            colorProfile: psImageData.colorProfile || "sRGB IEC61966-2.1", 
+            chunky: true
+        });
+
+        console.log("Encoding JPEG with valid image data:", imageDataNoAlpha);
+
+        // Encode to JPEG
+        const jpegBase64 = await imaging.encodeImageData({
+            imageData: imageDataNoAlpha,
+            base64: true
+        });
+
+        // Convert base64 to Uint8Array
+        const binaryStr = atob(jpegBase64);
+        const binaryData = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+            binaryData[i] = binaryStr.charCodeAt(i);
+        }
+        return binaryData;
+    } catch (error) {
+        console.error("Error encoding JPEG:", error);
+        throw error;
+    }
+};
+
+
+
+// Save JPEG to disk
+const encodeAndSaveJPEG = async (psImageData, filePath) => {
+    try {
+        const jpegData = await encodeToJPEG(psImageData);
+        const folder = await fs.getTemporaryFolder();
+        console.log("Saving JPEG to:", filePath);
+        const file = await folder.createFile(filePath, { overwrite: true });
+        await file.write(jpegData, { append: false });
+        console.log("JPEG saved: " + file.nativePath);
+    } catch (error) {
+        console.error("Error saving JPEG:", error);
+    }
+};
+
+// Save PNG using Offscreen Canvas
+const encodeAndSavePNG = async (rgbaBuffer, width, height, filePath) => {
+    try {
+        console.log("Encoding PNG with UPNG.js...", { width, height, bufferLength: rgbaBuffer.length });
+
+        // Encode PNG using bundled UPNG.js
+        const pngData = await encodeToPNG_UPNG(rgbaBuffer, width, height);
+
+        // Get UXP local filesystem
+        const uxp = require("uxp").storage.localFileSystem;
+
+        // Create PNG file in the designated folder
+        const folder = await fs.getTemporaryFolder()
+        console.log("Saving PNG to:", folder.nativePath);
+        const saveFile = await fs.createEntryWithUrl(folder.nativePath + "/"+filePath, { overwrite: true });
+
+        // Write the encoded PNG data to the file
+        await saveFile.write(pngData, { append: false });
+
+        console.log("PNG saved successfully:", saveFile.nativePath);
+    } catch (error) {
+        console.error("Error saving PNG:", error);
+    }
+};
+
+
+// NEW MODULE: Run new export process using Imaging API
+const runNewExport = async (tempFolderPath) => {
+    await photoshop.core.executeAsModal(async () => {
+        try {
+            // 1. Get the selection mask (if any)
+            const mask = await getSelectionMask();
+
+            // 2. Extract document pixel data (PhotoshopImageData)
+            const imageData = await extractDocumentPixels();
+
+            // 3. Retrieve raw pixel buffer
+            const { width, height, rgbaData } = await extractRGBAFromPixelBuffer(imageData);
+
+            console.log("Extracted RGBA buffer:", rgbaData);
+
+            // 4. Apply selection mask if a valid selection exists.
+            let maskedBuffer = null;
+            if (mask) {
+                maskedBuffer = applySelectionMask(rgbaData, mask, width, height);
+            }
+
+            // 5. Encode and save images.
+            await encodeAndSaveJPEG(imageData, 'temp_image_rgb.jpg');
+            if (maskedBuffer) {
+                await encodeAndSavePNG(maskedBuffer, width, height, 'temp_image_inpaint.png');
+            }
+
+            console.log("New export completed successfully.");
+        } catch (error) {
+            console.error("Error during new export:", error);
+        }
+    });
+};
+
+
+
+
+
+
+
 
 // ────────────────────────────────────────────────────────────────
 // Export all functions so that they can be used elsewhere
@@ -659,10 +934,17 @@ module.exports = {
     makeSmartObject,
     copyImageToClipboard,
     renameLayer,
-    runStampRemove,
+    // Deprecated: runStampRemove,
     fastQueue,
     addNoiseLayer,
     insertAsLayer,
     openSmartObject,
     matchSkinTones,
+    // New exports for imaging API export process.
+	extractDocumentPixels,
+	getSelectionMask,
+	applySelectionMask,
+	encodeAndSaveJPEG,
+	encodeAndSavePNG,
+	runNewExport
 };
