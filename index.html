@@ -44,69 +44,8 @@
 
 
     <!-- Prompt Overlay goes first in DOM but appears visually below due to column-reverse -->
-     <div id="lowerThird">
-        <div id="promptOverlay">
-        <!-- Prompt Controls -->
-        <div class="prompt-option">
-                <sp-textarea id="positivePrompt" rows="1" style="width: 100%; text-align: center;" placeholder="Positive Prompt"></sp-textarea>
-        </div>
-
-        <div class="prompt-option" style="display: none;">
-            <sp-textfield id="negativePrompt" style="width: 100%; text-align: center;" placeholder="Negative Prompt"></sp-textfield>
-        </div>
-
-        <!-- Advanced Prompt Toggle and Seed Controls -->
-        <div class="prompt-option" style="
-        display: flex;
-        align-items: center;
-        justify-content: space-evenly;
-        width: 100%;
-        gap: 0.5rem;
-      ">
-      
-        <div id="advPromptingButton" title="Toggle advanced prompt settings"
-             style="display: flex; align-items: center; justify-content: center; height: 30px; width: 40px; border-radius: 4px;">
-          <sp-icon id="advPromptingIcon" size="s" name="ui:More"></sp-icon>
-        </div>
-      
-        <sp-textfield id="steps" placeholder="Steps" 
-             style="flex-grow: 1; min-width: 50px; max-width: 50px; display: none;"></sp-textfield>
-      
-        <sp-textfield id="seed" placeholder="Seed" 
-             style="flex-grow: 2; min-width: 150px; max-width: 175px;"></sp-textfield>
-      
-        <sp-textfield id="cfg" placeholder="CFG" 
-             style="flex-grow: 1; min-width: 50px; max-width: 50px; display: none;"></sp-textfield>
-      
-        <sp-action-button id="randomizeSeed"
-             style="display: flex; align-items: center; justify-content: center;">
-          🎲
-        </sp-action-button>
-      
-      </div>
-        
-    </div>
-     </div>
+     <!-- Removed the old lowerThird and queueButtonContainer -->
     
-
-    <div id="queueButtonContainer">
-        <!-- Progress element behind the button -->
-        <sp-button id="queueButton" variant="cta" style="z-index: 5;">Queue</sp-button>
-        <div id="queueButtonProgress" style="
-            position: absolute;
-            top: 0;
-            left: 50%;
-            width: 0;
-            height: 97%;
-            background-color: rgba(255, 255, 255, 0.5);
-            transition: width 0.3s ease, left 0.3s ease;
-            z-index: -1;
-            pointer-events: none;
-            border-radius: 16px;">
-        </div>
-    </div>
-
-
 
     <!-- Main Panel Dialogs -->
     <sp-dialog id="aboutDialog">
@@ -157,12 +96,45 @@
   <footer></footer>
 
   <!-- MINI QUEUE PANEL -->
-  <div id="miniQueuePanel" style="margin: 5px">
-    <div style="display: inline-flex; width: 100%">
-      <sp-textfield id="mini_positivePrompt" style="width: 100%; text-align: center" placeholder="Positive Prompt"></sp-textfield>
-      <sp-action-button size="m" id="mini_queueButton">Queue</sp-action-button>
-    </div>
+  <div id="miniQueuePanel" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+    <!-- New prompt overlay (top) -->
+    <div id="promptOverlay">
+        <div class="prompt-option">
+            <sp-textarea id="positivePrompt" rows="1" style="width: 100%; text-align: center;" placeholder="Positive Prompt"></sp-textarea>
+        </div>
+        <div class="prompt-option" style="display: none;">
+            <sp-textfield id="negativePrompt" style="width: 100%; text-align: center;" placeholder="Negative Prompt"></sp-textfield>
+        </div>
+        <div class="prompt-option" style="display: flex; align-items: center; justify-content: space-evenly; width: 100%; gap: 0.5rem;">
+            <div id="advPromptingButton" title="Toggle advanced prompt settings" style="display: flex; align-items: center; justify-content: center; height: 30px; width: 40px; border-radius: 4px;">
+                <sp-icon id="advPromptingIcon" size="s" name="ui:More"></sp-icon>
+            </div>
+            <sp-textfield id="steps" placeholder="Steps" style="flex-grow: 1; min-width: 50px; max-width: 50px; display: none;"></sp-textfield>
+            <sp-textfield id="seed" placeholder="Seed" style="flex-grow: 2; min-width: 150px; max-width: 175px;"></sp-textfield>
+            <sp-textfield id="cfg" placeholder="CFG" style="flex-grow: 1; min-width: 50px; max-width: 50px; display: none;"></sp-textfield>
+            <sp-action-button id="randomizeSeed" style="display: flex; align-items: center; justify-content: center;">
+                🎲
+            </sp-action-button>
+        </div>
+            <!-- New queue button container (moved below promptOverlay) -->
+    <div id="queueButtonContainer" style="margin-top: 10px;">
+      <sp-button id="queueButton" variant="cta" style="z-index: 5;">Queue</sp-button>
+      <div id="queueButtonProgress" style="
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 0;
+      height: 97%;
+      background-color: rgba(255, 255, 255, 0.5);
+      transition: width 0.3s ease, left 0.3s ease;
+      z-index: -1;
+      pointer-events: none;
+      border-radius: 16px;">
+      </div>
   </div>
+</div>
+    </div>
+
 
   <!-- PROMPT INFORMATION PANEL -->
   <div id="promptInfoPanel" style="margin: 5px">

@@ -28,6 +28,10 @@ let advancedPrompting = false;
 
 let genCompleted = true;
 
+let autoQueue = false;
+const autoQueueDelay = 500;
+let autoRandomizeSeed = false;
+
 let updateLivePreview = true;
 let animation_state = 0;
 let qButtonHoverState = false;
@@ -59,7 +63,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     console.log("Plugin Folder: " + pluginFolderPath.nativePath);
 
     await promptHandling.loadPrompt(tempFolderPath); // Load prompt first
-    // seedControl.getRandomInt();
     await ui.updatePreview(center = true);
     //await getGenerationState();
     await websocketModule.connectComfyUIWebsocket(pluginFolderPath);
@@ -181,6 +184,9 @@ let generationState = "idle"; // Add a state logger
 
 const run_queue = async () => {
     const prompt = await promptHandling.loadPrompt(tempFolderPath);
+    if (autoRandomizeSeed) {
+        seedControl.getRandomInt();
+    }
 
     if (generationState === "running") {
         await cancel_queue();
@@ -251,9 +257,6 @@ const cancel_queue = async () => {
     }
 }
 
-// Update queue button click listener if needed
-document.getElementById("queueButton").addEventListener('click', run_queue);
-
 //####### EVENT TRIGGERS ########
 
 // DOCUMENT
@@ -267,7 +270,30 @@ photoshop.action.addNotificationListener([{
 
 
 // QUEUE
-document.getElementById("queueButton").addEventListener('click', run_queue);
+const queueButtonClick = async (event) => {
+    if (event.shiftKey) {
+        autoQueue = !autoQueue;
+        console.log("Shift + Click detected. Auto-Queue: " + autoQueue);
+        
+        if (autoQueue) {
+            document.getElementById('queueButton').style.backgroundColor = ' rgba(116, 255, 127, 0.21)';
+            //document.getElementById('queueButton').disabled = true;
+            document.getElementById('queueButton').innerHTML= '<svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="1" d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6Z"/><path stroke="currentColor" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>';
+        }
+        else {
+            document.getElementById('queueButton').style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            //document.getElementById('queueButton').disabled = false;
+            document.getElementById('queueButton').innerText = 'Queue';
+        }
+        // activate autoqueue
+    }
+    else {
+        run_queue();
+    }
+}
+document.getElementById("queueButton").addEventListener('click', queueButtonClick);
+
+
 
 document.getElementById("queueButton").addEventListener('mouseover', (event) => {
     qButtonHoverState = true;
@@ -276,7 +302,9 @@ document.getElementById("queueButton").addEventListener('mouseover', (event) => 
         document.getElementById('queueButton').innerText = "❌";
         document.getElementById('queueButton').style.backgroundColor = "#ff4d4d";
     } else {
-        document.getElementById('queueButton').style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+        if(!autoQueue) {
+            document.getElementById('queueButton').style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+        }
     }
 });
 
@@ -287,7 +315,9 @@ document.getElementById("queueButton").addEventListener('mouseout', (event) => {
         document.getElementById('queueButton').innerText = "⏳";
         document.getElementById('queueButton').style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
     } else {
-        document.getElementById('queueButton').style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        if(!autoQueue) {
+            document.getElementById('queueButton').style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        }
     }
 });
 
@@ -452,8 +482,27 @@ document.getElementById("insertSettings").addEventListener("change", evt => {
 // PROMPT HANDELING ///////////////////////////////
 
 // SEED WIDGETS
-document.getElementById("randomizeSeed").addEventListener('click', seedControl.getRandomInt);
-document.getElementById("seed").addEventListener('load', seedControl.getRandomInt);
+const randomizeSeedClick = async (event) => {
+    if (event.shiftKey) {
+        autoRandomizeSeed = !autoRandomizeSeed;
+
+        console.log("Shift + Click detected. Auto-Randomize Seed: " + autoRandomizeSeed);
+        if (autoRandomizeSeed) {
+            document.getElementById('randomizeSeed').style.backgroundColor = ' rgba(116, 255, 127, 0.21)';
+        }
+        else {
+            document.getElementById('randomizeSeed').style.backgroundColor = '';
+        }
+        return
+    }
+    else {
+        seedControl.getRandomInt();
+    }
+
+}
+
+document.getElementById("randomizeSeed").addEventListener('click', randomizeSeedClick);
+document.getElementById("seed").addEventListener('load', randomizeSeedClick);
 
 // PROMPT WIDGETS
 document.getElementById("positivePrompt").addEventListener('input', () => promptHandling.savePrompt(tempFolderPath));

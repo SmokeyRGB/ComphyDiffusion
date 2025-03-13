@@ -88,7 +88,7 @@ const hideAdvPrompts = async () => {
     advancedPrompting = !advancedPrompting;
 
     // Move queue button
-    queueButton.style.bottom = advancedPrompting ? '181px' : '145px';
+    //queueButton.style.bottom = advancedPrompting ? '181px' : '145px';
 
     // Toggle visibility
     const display = advancedPrompting ? "flex" : "none";
@@ -113,8 +113,6 @@ document.getElementById("negativePrompt").addEventListener('input', () => savePr
 document.getElementById("steps").addEventListener('input', () => savePrompt(tempFolderPath));
 document.getElementById("cfg").addEventListener('input', () => savePrompt(tempFolderPath));
 
-// Add event listener for randomizeSeed button
-document.getElementById("randomizeSeed").addEventListener('click', seedControl.getRandomInt);
 
 
 
