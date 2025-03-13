@@ -100,10 +100,10 @@
     <!-- New prompt overlay (top) -->
     <div id="promptOverlay">
         <div class="prompt-option">
-            <sp-textarea id="positivePrompt" rows="1" style="width: 100%; text-align: center;" placeholder="Positive Prompt"></sp-textarea>
+            <sp-textarea id="positivePrompt" rows="1" style="width: 100%; text-align: center; border-radius: 5px;" placeholder="Positive Prompt"></sp-textarea>
         </div>
         <div class="prompt-option" style="display: none;">
-            <sp-textfield id="negativePrompt" style="width: 100%; text-align: center;" placeholder="Negative Prompt"></sp-textfield>
+            <sp-textfield id="negativePrompt" style="width: 100%; text-align: center; border-radius: 5px;" placeholder="Negative Prompt"></sp-textfield>
         </div>
         <div class="prompt-option" style="display: flex; align-items: center; justify-content: space-evenly; width: 100%; gap: 0.5rem;">
             <div id="advPromptingButton" title="Toggle advanced prompt settings" style="display: flex; align-items: center; justify-content: center; height: 30px; width: 40px; border-radius: 4px;">
@@ -117,7 +117,7 @@
             </sp-action-button>
         </div>
             <!-- New queue button container (moved below promptOverlay) -->
-    <div id="queueButtonContainer" style="margin-top: 10px;">
+    <div id="queueButtonContainer">
       <sp-button id="queueButton" variant="cta" style="z-index: 5;">Queue</sp-button>
       <div id="queueButtonProgress" style="
       position: absolute;

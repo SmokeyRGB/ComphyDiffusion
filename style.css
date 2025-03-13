@@ -212,7 +212,7 @@ body {
     z-index: 999; /* Increase z-index to appear above promptOverlay */
     position: relative;
     width: auto;
-    margin: 10px auto 0;
+    margin: auto;
 }
 
 #queueButton {
