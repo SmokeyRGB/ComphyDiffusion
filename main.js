@@ -29,7 +29,7 @@ let advancedPrompting = false;
 let genCompleted = true;
 
 let autoQueue = false;
-const autoQueueDelay = 500;
+const autoQueueDelay = 3000;
 let autoRandomizeSeed = false;
 
 let updateLivePreview = true;
@@ -274,6 +274,7 @@ const queueButtonClick = async (event) => {
     if (event.shiftKey) {
         autoQueue = !autoQueue;
         console.log("Shift + Click detected. Auto-Queue: " + autoQueue);
+        ui.updateAutoQueue(autoQueue);
         
         if (autoQueue) {
             document.getElementById('queueButton').style.backgroundColor = ' rgba(116, 255, 127, 0.21)';
@@ -338,7 +339,7 @@ entrypoints.setup({
 
                 switch (id) {
                     case "about":
-                        showAbout();
+                        ui.showAbout();
                         break;
                     case "pluginReload":
                         window.location.reload();
@@ -418,6 +419,12 @@ window.require('photoshop').core.suppressResizeGripper(
         "target": "vanilla",
         "value": true
     })
+window.require('photoshop').core.suppressResizeGripper(
+    {
+        "type": "panel",
+        "target": "popout",
+        "value": true
+    })
 
 
 // HIDE 'ABOUT' DIALOG
@@ -441,10 +448,28 @@ const generationStateInterval = setInterval(ui.getGenerationState, 2000);
 
 const animationInterval = setInterval(ui.animateObjects, 10)
 
-// GENERATION PREVIEW HANDELING /////////////////
+const autoQueueCheck = async () => {
+    if (autoQueue && generationState === "idle") {
+        if (await imageActions.documentPixelsChanged()) { // Check if document has changed
+            console.log("Document has changed. Running queue.")
+            await run_queue();
+        }
+    }
+    else if (autoQueue && generationState === "running") {
+        if (await imageActions.documentPixelsChanged()) { // Check if document has changed
+            console.log("Document has changed. Running queue.")
+            await cancel_queue();
+            await run_queue();
+        }   
+    }
+}
 
-// HIDE / SHOW CHECKBOXES
-document.getElementById("advPromptingButton").addEventListener('click', ui.hideAdvPrompts);
+const autoQueueInterval = setInterval(() => {
+    photoshop.core.executeAsModal(async () => {
+        await autoQueueCheck().catch(console.error); })
+}, autoQueueDelay);
+
+// GENERATION PREVIEW HANDELING /////////////////
 
 // INSERT PREVIEW HANDELING
 

@@ -1,6 +1,7 @@
 const { loadPrompt, savePrompt } = require('./prompt_handeling');
 
 const seedControl = require('./seed_control');
+let autoQueue = false;
 
 
 const displayHelptext = async () => {
@@ -77,26 +78,33 @@ const hideAdvPrompts = async () => {
     const negativePrompt = document.getElementById("negativePrompt").parentElement;
     const steps = document.getElementById("steps");
     const cfg = document.getElementById("cfg");
-    const increaseSeedBtn = document.getElementById("increaseSeed");
-    const decreaseSeedBtn = document.getElementById("decreaseSeed");
+    const seed = document.getElementById("seed");
     const advPromptingBtn = document.getElementById("advPromptingButton");
-
+    const randomizeSeedBtn = document.getElementById("randomizeSeed");
     const queueButton = document.getElementById('queueButtonContainer');
     
 
     // Toggle advanced state
     advancedPrompting = !advancedPrompting;
 
-    // Move queue button
-    //queueButton.style.bottom = advancedPrompting ? '181px' : '145px';
 
     // Toggle visibility
     const display = advancedPrompting ? "flex" : "none";
     negativePrompt.style.display = display;
     steps.style.display = display;
     cfg.style.display = display;
-    increaseSeedBtn.style.display = advancedPrompting ? "inline-block" : "none";
-    decreaseSeedBtn.style.display = advancedPrompting ? "inline-block" : "none";
+
+    // Toggle prompt border
+    document.getElementById("positivePrompt").style.border = advancedPrompting ? "1px solid rgba(66, 158, 89, 0.55)" : "";
+    document.getElementById("negativePrompt").style.border = advancedPrompting ? "1px solid rgba(99, 29, 29, 0.65)" : "";
+
+    // Toggle size
+    document.getElementById("negativePrompt").size = advancedPrompting ? "s" : "";
+    steps.size = advancedPrompting ? "s" : "";
+    cfg.size = advancedPrompting ? "s" : "";
+    seed.size = advancedPrompting ? "s" : "";
+    advPromptingBtn.style.height = advancedPrompting ? "25px" : "30px";
+    randomizeSeedBtn.style.height = advancedPrompting ? "25px" : "";
 
     // Visual feedback for button
     advPromptingBtn.style.backgroundColor = advancedPrompting ? "#1e1c19" : "";
@@ -466,16 +474,27 @@ const updateGenerationStatus = async (status) => {
         await statusFile.write(JSON.stringify(data), { append: false });
         console.log("Updated generation status file to:", status);
         if (status === "completed") {
-            document.getElementById('queueButton').innerText = "Queue";
-            document.getElementById('queueButton').disabled = false;
-            document.getElementById('queueButton').variant = 'cta';
-            document.getElementById('queueButton').style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+          if (!autoQueue) {
+              document.getElementById('queueButton').innerText = "Queue";
+              document.getElementById('queueButton').disabled = false;
+              document.getElementById('queueButton').variant = 'cta';
+              document.getElementById('queueButton').style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+          }
+          else {
+            document.getElementById('queueButton').style.backgroundColor = ' rgba(116, 255, 127, 0.21)';
+            //document.getElementById('queueButton').disabled = true;
+            document.getElementById('queueButton').innerHTML= '<svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="1" d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6Z"/><path stroke="currentColor" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>';
+          }
             generationState = "idle"
         }
 
     } catch (error) {
         console.error("Error updating generation status file:", error);
     }
+}
+
+const updateAutoQueue = (newAutoQueue) => {
+    autoQueue = newAutoQueue;
 }
 
 const getGenerationState = async () => {
@@ -569,6 +588,7 @@ module.exports = {
     hideAdvPrompts,
     updatePreview,
     updateTempPreview,
+    updateAutoQueue,
     display_progress,
     resetQueueButton,
     updateGenerationStatus,

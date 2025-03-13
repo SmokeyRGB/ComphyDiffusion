@@ -14,6 +14,8 @@ const pngModule = require("../dist/bundle.js");
 // Log to verify correct structure
 console.log("Checking module export:", pngModule);
 
+let lastDocumentPixels = null;
+
 // Correctly access encodeToPNG_UPNG from Plugin
 const encodeToPNG_UPNG = pngModule.Plugin.encodeToPNG_UPNG;
 if (typeof encodeToPNG_UPNG !== "function") {
@@ -753,6 +755,31 @@ const removeAlphaFromPixelBuffer = async (psImageData) => {
     return { width, height, rgbData };
 };
 
+const documentPixelsChanged = async () => {
+    const kSRGBProfile = "sRGB IEC61966-2.1";
+    let options = {
+        "targetSize": {"height": 100, "width": 100},
+        "componentSize": 8,
+        "applyAlpha": true,
+        "colorProfile": kSRGBProfile};
+    
+    pixels = await imaging.getPixels(options);
+    currentDocumentPixels = await imaging.encodeImageData({
+        imageData: pixels.imageData,
+        format: "png",
+        quality: 1.0,
+        colorProfile: kSRGBProfile,
+        base64: true
+    });
+
+    //console.log(currentDocumentPixels, lastDocumentPixels)
+    documentChanged = lastDocumentPixels !== currentDocumentPixels;
+    lastDocumentPixels = currentDocumentPixels;
+
+    return documentChanged;
+}
+
+
 // Helper: Extract RGBA pixel buffer from PhotoshopImageData
 const extractRGBAFromPixelBuffer = async (psImageData) => {
     const width = psImageData.imageData.width;
@@ -903,6 +930,7 @@ module.exports = {
     openSmartObject,
     matchSkinTones,
     // New exports for imaging API export process.
+    documentPixelsChanged,
 	extractDocumentPixels,
 	getSelectionMask,
 	applySelectionMask,
