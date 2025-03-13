@@ -368,37 +368,6 @@ const runStampRemove = async () => {
 };
 
 // ────────────────────────────────────────────────────────────────
-// Run a “fast queue” by clearing the quick mask only
-const fastQueue = async () => {
-    return photoshop.core.executeAsModal(async () => {
-        try {
-            await batchPlay([
-                // ACTIVATE QUICKMASK
-                {
-                    _obj: "set",
-                    _target: [
-                        { _ref: "property", _property: "quickMask" },
-                        { _ref: "document", _enum: "ordinal", _value: "targetEnum" }
-                    ],
-                    _options: { dialogOptions: "dontDisplay" }
-                },
-                // CLEAR QUICKMASK
-                {
-                    _obj: "clearEvent",
-                    _target: [
-                        { _ref: "property", _property: "quickMask" },
-                        { _ref: "document", _enum: "ordinal", _value: "targetEnum" }
-                    ],
-                    _options: { dialogOptions: "dontDisplay" }
-                }
-            ], {});
-        } catch (e) {
-            console.log("Error whilst executing fast queue: " + e);
-        }
-    }, { commandName: "Fast Queue" });
-};
-
-// ────────────────────────────────────────────────────────────────
 // Add a noise layer (and then convert it to a smart object)
 const addNoiseLayer = async () => {
     return photoshop.core.executeAsModal(async () => {
@@ -916,12 +885,6 @@ const runNewExport = async (tempFolderPath) => {
 };
 
 
-
-
-
-
-
-
 // ────────────────────────────────────────────────────────────────
 // Export all functions so that they can be used elsewhere
 module.exports = {
@@ -935,7 +898,6 @@ module.exports = {
     copyImageToClipboard,
     renameLayer,
     // Deprecated: runStampRemove,
-    fastQueue,
     addNoiseLayer,
     insertAsLayer,
     openSmartObject,

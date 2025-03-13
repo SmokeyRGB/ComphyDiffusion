@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     console.log("Plugin Folder: " + pluginFolderPath.nativePath);
 
     await promptHandling.loadPrompt(tempFolderPath); // Load prompt first
-    seedControl.getRandomInt();
+    // seedControl.getRandomInt();
     await ui.updatePreview(center = true);
     //await getGenerationState();
     await websocketModule.connectComfyUIWebsocket(pluginFolderPath);
@@ -422,21 +422,6 @@ document.getElementById("insertAsLayer").addEventListener('click', () => {
     console.log("Inserting as Layer");
     imageActions.insertAsLayer(insertAs, tempFolderPath);
 });
-
-document.getElementById("copyOrInsert").addEventListener("change", evt => {
-    let index = evt.target.selectedIndex;
-    switch (index) {
-        case 0:
-            insertToClipboard = false;
-            document.getElementById("maskedLayerOption").style.display = "unset"
-            break
-        case 1:
-            insertToClipboard = true;
-            document.getElementById("insertSettings").selectedIndex = 0;
-            document.getElementById("maskedLayerOption").style.display = "none"
-            break
-    }
-})
 
 document.getElementById("insertSettings").addEventListener("change", evt => {
     console.log(`Selected item: ${evt.target.selectedIndex}`);

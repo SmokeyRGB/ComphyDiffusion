@@ -2,6 +2,7 @@ const { loadPrompt, savePrompt } = require('./prompt_handeling');
 
 const seedControl = require('./seed_control');
 
+
 const displayHelptext = async () => {
     let enabled = document.getElementById('displayHelptext').checked;
 
@@ -68,20 +69,6 @@ const changePreviewSize = () => {
     document.getElementById('generationPreview').style.height = fixed_height;
 }
 
-const hideMaskPreview = () => {
-    var x = document.getElementById("maskPreview");
-    if (x.style.display === "none") {
-        x.style.display = "block";
-        let slider_value = document.getElementById('previewSizeSlider').value;
-        let preview_size = 10 * (slider_value / 100) + 'em';
-        preview_img.style.height = preview_size;
-    } else {
-        x.style.display = "none";
-        let slider_value = document.getElementById('previewSizeSlider').value;
-        let preview_size = 15 * (slider_value / 100) + 'em';
-        preview_img.style.height = preview_size;
-    }
-}
 
 const hideAdvPrompts = async () => {
     console.log("Toggling advanced prompts");
@@ -128,6 +115,9 @@ document.getElementById("cfg").addEventListener('input', () => savePrompt(tempFo
 
 // Add event listener for randomizeSeed button
 document.getElementById("randomizeSeed").addEventListener('click', seedControl.getRandomInt);
+
+
+
 
 // Updated helper to attach zoom and pan events using mouse events for Spectrum (Adobe UXP)
 // In attachZoomPanListeners we use a zoomLevel constant.
@@ -578,7 +568,6 @@ module.exports = {
     showAbout,
     animateObjects,
     changePreviewSize,
-    hideMaskPreview,
     hideAdvPrompts,
     updatePreview,
     updateTempPreview,

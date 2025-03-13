@@ -3,7 +3,7 @@ const app = photoshop.app;
 
 async function copyToClipboard(text) {
     try {
-        await navigator.clipboard.setContent({ 'text/plain': text });
+        await navigator.clipboard.write({ 'text/plain': text });
         console.log("Copied to clipboard:", text);
     } catch (error) {
         console.error("Clipboard error:", error);
@@ -40,42 +40,18 @@ const closeDoc = (id) => {
     );
 }
 
-function getRandomInt(min = 0, max = 9999999999) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
 
-const activeSelectionBounds = async () => {
-    const idDoc = app.activeDocument._id;
-    const result = await require("photoshop").action.batchPlay(
-        [
-            {
-                "_obj": "get",
-                "_target": [
-                    {
-                        "_property": "selection"
-                    },
-                    {
-                        "_ref": "document",
-                        "_enum": "ordinal",
-                        "_value": "targetEnum"
-                    }
-                ],
-                "_options": {
-                    "dialogOptions": "dontDisplay"
-                }
-            }
-        ], {
-        "synchronousExecution": false,
-        "modalBehavior": "fail"
-    });
-    return result[0].selection.left._value
+const getActiveSelection = async () => {
+    selection = app.activeDocument.selection;
+    bounds = selection.bounds;
+    return selection
 }
 
 const selectionActive = async () => {
     let activeSelection;
     try {
-        activeSelection = await activeSelectionBounds();
-        if (Number.isInteger(activeSelection)) {
+        activeSelection = await getActiveSelection();
+        if (Number.isInteger(activeSelection.bounds['top'])) {
             activeSelection = true;
         }
     }
@@ -90,8 +66,7 @@ const selectionActive = async () => {
 
 module.exports = {
     copyToClipboard,
-    getRandomInt,
-    activeSelectionBounds,
+    getActiveSelection,
     selectionActive,
     closeDoc,
 };
