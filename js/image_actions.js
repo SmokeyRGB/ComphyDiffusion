@@ -22,8 +22,7 @@ if (typeof encodeToPNG_UPNG !== "function") {
     throw new Error("encodeToPNG_UPNG is not properly imported!");
 }
 
-// ────────────────────────────────────────────────────────────────
-// Create a temporary selection channel (using a rectangle then duplicating it)
+/* Create a temporary selection channel (using a rectangle then duplicating it) */
 const createSelectionChannel = async () => {
     return photoshop.core.executeAsModal(async () => {
         try {
@@ -68,8 +67,7 @@ const createSelectionChannel = async () => {
     }, { commandName: "Save Selection" });
 };
 
-// ────────────────────────────────────────────────────────────────
-// Save the current selection into the temporary channel
+/* Save the current selection into the temporary channel */
 const saveSelection = async () => {
     return photoshop.core.executeAsModal(async () => {
         try {
@@ -89,8 +87,7 @@ const saveSelection = async () => {
     }, { commandName: "Save Selection" });
 };
 
-// ────────────────────────────────────────────────────────────────
-// Reload the temporary selection into the active selection
+/* Reload the temporary selection into the active selection */
 const loadSelection = async () => {
     return photoshop.core.executeAsModal(async () => {
         try {
@@ -110,8 +107,7 @@ const loadSelection = async () => {
     }, { commandName: "Load Selection" });
 };
 
-// ────────────────────────────────────────────────────────────────
-// Paste the temporary image file (temp_image_preview.png) as a layer
+/* Paste the temporary image file (temp_image_preview.png) as a layer */
 const pasteLayer = async () => {
     return photoshop.core.executeAsModal(async () => {
         try {
@@ -140,8 +136,7 @@ const pasteLayer = async () => {
     }, { commandName: "Paste Image as Layer" });
 };
 
-// ────────────────────────────────────────────────────────────────
-// Center the active layer on the canvas
+/* Center the active layer on the canvas */
 const centerImage = async () => {
     return photoshop.core.executeAsModal(async () => {
         try {
@@ -187,8 +182,7 @@ const centerImage = async () => {
     }, { commandName: "Center Layer" });
 };
 
-// ────────────────────────────────────────────────────────────────
-// Apply the active selection as a layer mask
+/* Apply the active selection as a layer mask */
 const applyImageMask = async () => {
     return photoshop.core.executeAsModal(async () => {
         try {
@@ -207,8 +201,7 @@ const applyImageMask = async () => {
     }, { commandName: "Apply Image Mask" });
 };
 
-// ────────────────────────────────────────────────────────────────
-// Convert the current layer into a Smart Object
+/* Convert the current layer into a Smart Object */
 const makeSmartObject = async () => {
     return photoshop.core.executeAsModal(async () => {
         try {
@@ -221,8 +214,7 @@ const makeSmartObject = async () => {
     }, { commandName: "Make Smart Object" });
 };
 
-// ────────────────────────────────────────────────────────────────
-// Copy the active layer to the clipboard then delete it
+/* Copy the active layer to the clipboard then delete it */
 const copyImageToClipboard = async () => {
     return photoshop.core.executeAsModal(async () => {
         try {
@@ -255,8 +247,7 @@ const copyImageToClipboard = async () => {
     }, { commandName: "Copy Layer" });
 };
 
-// ────────────────────────────────────────────────────────────────
-// Rename the active layer with the given name
+/* Rename the active layer with the given name */
 const renameLayer = async (layername) => {
     return photoshop.core.executeAsModal(async () => {
         try {
@@ -276,8 +267,7 @@ const renameLayer = async (layername) => {
     }, { commandName: "Rename Layer" });
 };
 
-// ────────────────────────────────────────────────────────────────
-// Run a series of commands to “stamp remove” (generate inpaint/RGB images)
+/* Run a series of commands to “stamp remove” (generate inpaint/RGB images) */
 const runStampRemove = async () => {
     return photoshop.core.executeAsModal(async () => {
         try {
@@ -369,8 +359,7 @@ const runStampRemove = async () => {
     }, { commandName: "Run Stamp Remove" });
 };
 
-// ────────────────────────────────────────────────────────────────
-// Add a noise layer (and then convert it to a smart object)
+/* Add a noise layer (and then convert it to a smart object) */
 const addNoiseLayer = async () => {
     return photoshop.core.executeAsModal(async () => {
         try {
@@ -420,6 +409,7 @@ const addNoiseLayer = async () => {
     }, { commandName: "Add Noise Layer" });
 };
 
+/* Insert current generated image as... */
 const insertAsLayer = async (insertAs, tempFolderPath) => {
     //console.log((insertToClipboard ? "Copying to Clipboard: " : "Inserting as Layer: ") + insertAs);
     let prompt = await prompt_handeling.loadPrompt(tempFolderPath);
@@ -483,6 +473,7 @@ const insertAsLayer = async (insertAs, tempFolderPath) => {
     documentChanged = true;
 };
 
+/* Open Selected Smart Object*/
 const openSmartObject = async (id) => {
     return window.require("photoshop").core.executeAsModal(
         async () => {
@@ -629,7 +620,19 @@ const autoColorMatchSkinTones = async (refColorObj, targetColorObj) => {
 };
 
 
-// NEW MODULE: Image Extraction using the Imaging API
+
+/**
+ * Extracts pixel data from the active Photoshop document.
+ *
+ * This function runs within a modal execution context to ensure that the
+ * operation is performed safely and without interruption. It retrieves the
+ * pixel data as a PhotoshopImageData instance.
+ *
+ * @async
+ * @function extractDocumentPixels
+ * @returns {Promise<PhotoshopImageData|null>} A promise that resolves to the pixel data of the active document, or null if an error occurs.
+ * @throws Will throw an error if the pixel extraction fails.
+ */
 const extractDocumentPixels = async () => {
     let pixelData = null;
     await photoshop.core.executeAsModal(async () => {
@@ -644,7 +647,28 @@ const extractDocumentPixels = async () => {
     return pixelData;
 };
 
-// NEW MODULE: Updated Retrieve selection mask using the Imaging API wrapped in executeAsModal
+
+/**
+ * Asynchronously retrieves the selection mask of the active document in Photoshop.
+ * 
+ * This function executes within a modal context to ensure it runs safely within Photoshop's environment.
+ * It initializes a mask array with zeros (fully transparent) and then populates it with the grayscale 
+ * values of the selection (0–255), where 0 represents no selection and 255 represents fully selected.
+ * 
+ * @async
+ * @function getSelectionMask
+ * @returns {Promise<number[][] | null>} A 2D array representing the selection mask with grayscale values (0–255),
+ *                                       or null if an error occurs.
+ * 
+ * @example
+ * getSelectionMask().then(mask => {
+ *     if (mask) {
+ *         console.log("Selection mask retrieved:", mask);
+ *     } else {
+ *         console.log("Failed to retrieve selection mask.");
+ *     }
+ * });
+ */
 const getSelectionMask = async () => {
     let mask = null;
     await photoshop.core.executeAsModal(async () => {
@@ -687,13 +711,24 @@ const getSelectionMask = async () => {
             }
         } catch (error) {
             console.error("Error getting selection mask:", error);
+            mask = null;
         }
     }, { commandName: "Get Selection Mask" });
     return mask;
 };
 
 
-// NEW MODULE: Process pixels to apply selection mask (set alpha=0 inside selection)
+
+/**
+ * Applies a selection mask to the given pixel data.
+ *
+ * @param {Uint8Array} pixels - The pixel data of the image in RGBA format.
+ * @param {number[][]} mask - A 2D array representing the selection mask with grayscale alpha values (0–255).
+ * @param {number} width - The width of the image.
+ * @param {number} height - The height of the image.
+ * @returns {Uint8Array} The pixel data with the selection mask applied.
+ * @throws {Error} If the pixel data is invalid or does not match the expected size.
+ */
 const applySelectionMask = (pixels, mask, width, height) => {
     if (!pixels || pixels.length !== width * height * 4) {
         throw new Error(`Invalid pixel data. Expected ${width * height * 4}, got ${pixels ? pixels.length : 0}`);
@@ -727,7 +762,14 @@ const applySelectionMask = (pixels, mask, width, height) => {
 
 
 
-// Helper: Convert RGBA pixel data to RGB by removing alpha channel
+
+/**
+ * Removes the alpha channel from the given pixel buffer and converts it from RGBA to RGB format for further processing down the pipeline.
+ *
+ * @param {Object} psImageData - The image data object containing the pixel buffer.
+ * @returns {Promise<Object>} A promise that resolves to an object containing the width, height, and RGB pixel data.
+ * @throws {Error} If the pixel buffer size does not match the expected size.
+ */
 const removeAlphaFromPixelBuffer = async (psImageData) => {
     const width = psImageData.imageData.width;
     const height = psImageData.imageData.height;
@@ -755,6 +797,15 @@ const removeAlphaFromPixelBuffer = async (psImageData) => {
     return { width, height, rgbData };
 };
 
+/**
+ * Asynchronously checks if the pixels of the current document have changed.
+ *
+ * This function retrieves the pixel data of the current document with specified options,
+ * encodes the image data to a PNG format with a specified color profile, and compares it
+ * with the previously stored pixel data to determine if the document has changed.
+ *
+ * @returns {Promise<boolean>} A promise that resolves to a boolean indicating whether the document pixels have changed.
+ */
 const documentPixelsChanged = async () => {
     const kSRGBProfile = "sRGB IEC61966-2.1";
     let options = {
@@ -780,8 +831,15 @@ const documentPixelsChanged = async () => {
 }
 
 
-// Helper: Extract RGBA pixel buffer from PhotoshopImageData
-const extractRGBAFromPixelBuffer = async (psImageData) => {
+
+/**
+ * Extracts the RGBA data from a Photoshop image data object.
+ *
+ * @param {Object} psImageData - The Photoshop image data object.
+ * @returns {Promise<Object>} A promise that resolves to an object containing the width, height, and RGBA data buffer.
+ * @throws {Error} Throws an error if the extracted data length does not match the expected size.
+ */
+const extractRGBAfromPSImageData = async (psImageData) => {
     const width = psImageData.imageData.width;
     const height = psImageData.imageData.height;
 
@@ -798,11 +856,21 @@ const extractRGBAFromPixelBuffer = async (psImageData) => {
 };
 
 
-// Helper: Encode pixel buffer to JPEG using imaging API
-const encodeToJPEG = async (psImageData) => {
+
+/**
+ * Encodes rgbaData to a JPEG format.
+ *
+ * This function removes the alpha channel from the image data, converts it to RGB,
+ * and then encodes it to a JPEG format. The resulting JPEG data is returned as a Uint8Array.
+ *
+ * @param {Object} rgbaData - The Photoshop image data object to be encoded.
+ * @returns {Promise<Uint8Array>} A promise that resolves to the JPEG encoded image data as a Uint8Array.
+ * @throws Will throw an error if the encoding process fails.
+ */
+const encodeToJPEG = async (rgbaData) => {
     try {
         // Convert to RGB (JPEG does not support alpha)
-        const { width, height, rgbData } = await removeAlphaFromPixelBuffer(psImageData);
+        const { width, height, rgbData } = await removeAlphaFromPixelBuffer(rgbaData);
 
         // Create valid PhotoshopImageData from the new buffer
         const imageDataNoAlpha = await imaging.createImageDataFromBuffer(rgbData, {
@@ -810,7 +878,7 @@ const encodeToJPEG = async (psImageData) => {
             height: height,
             components: 3, // RGB
             colorSpace: "RGB",
-            colorProfile: psImageData.colorProfile || "sRGB IEC61966-2.1", 
+            colorProfile: rgbaData.colorProfile || "sRGB IEC61966-2.1", 
             chunky: true
         });
 
@@ -837,10 +905,18 @@ const encodeToJPEG = async (psImageData) => {
 
 
 
-// Save JPEG to disk
-const encodeAndSaveJPEG = async (psImageData, filePath) => {
+
+/**
+ * Encodes RGBA data to JPEG format and saves it to the specified file path.
+ *
+ * @param {Uint8Array} rgbaData - The RGBA data to be encoded to JPEG.
+ * @param {string} filePath - The path where the JPEG file will be saved.
+ * @returns {Promise<void>} A promise that resolves when the JPEG file has been successfully saved.
+ * @throws {Error} Throws an error if there is an issue with encoding or saving the JPEG file.
+ */
+const encodeAndSaveJPEG = async (rgbaData, filePath) => {
     try {
-        const jpegData = await encodeToJPEG(psImageData);
+        const jpegData = await encodeToJPEG(rgbaData);
         const folder = await fs.getTemporaryFolder();
         console.log("Saving JPEG to:", filePath);
         const file = await folder.createFile(filePath, { overwrite: true });
@@ -851,7 +927,17 @@ const encodeAndSaveJPEG = async (psImageData, filePath) => {
     }
 };
 
-// Save PNG using Offscreen Canvas
+
+/**
+ * Encodes an RGBA buffer to a PNG format and saves it to the specified file path.
+ *
+ * @param {Uint8Array} rgbaBuffer - The RGBA buffer containing image data.
+ * @param {number} width - The width of the image.
+ * @param {number} height - The height of the image.
+ * @param {string} filePath - The file path where the PNG will be saved.
+ * @returns {Promise<void>} - A promise that resolves when the PNG is successfully saved.
+ * @throws {Error} - Throws an error if encoding or saving the PNG fails.
+ */
 const encodeAndSavePNG = async (rgbaBuffer, width, height, filePath) => {
     try {
         console.log("Encoding PNG with UPNG.js...", { width, height, bufferLength: rgbaBuffer.length });
@@ -876,8 +962,29 @@ const encodeAndSavePNG = async (rgbaBuffer, width, height, filePath) => {
     }
 };
 
+/**
+ * Saves an RGBA buffer as a PNG file.
+ *
+ * @param {Uint8Array} rgbaBuffer - The RGBA buffer containing image data.
+ * @param {number} width - The width of the image.
+ * @param {number} height - The height of the image.
+ * @param {string} filePath - The file path where the PNG will be saved.
+ * @returns {Promise<void>} A promise that resolves when the image is saved.
+ * @throws {Error} If there is an error during the save process.
+ */
+const fastSavePng = async (rgbaBuffer, width, height, filePath) => {
+    try {
+        const saveFolder = await fs.getTemporaryFolder();
+        const saveFile = await saveFolder.createFile(filePath, { overwrite: true });
+        // const saveToken = fs.createSessionToken(saveFile);
+        // const savePath = saveFile.nativePath;
+        app.activeDocument.saveAs.png(saveFile, {compression: 6}, false);
+    } catch (error) {
+        console.error("Error saving PNG:", error);
+    }
+}
 
-// NEW MODULE: Run new export process using Imaging API
+
 const runNewExport = async (tempFolderPath) => {
     await photoshop.core.executeAsModal(async () => {
         try {
@@ -888,7 +995,7 @@ const runNewExport = async (tempFolderPath) => {
             const imageData = await extractDocumentPixels();
 
             // 3. Retrieve raw pixel buffer
-            const { width, height, rgbaData } = await extractRGBAFromPixelBuffer(imageData);
+            const { width, height, rgbaData } = await extractRGBAfromPSImageData(imageData);
 
             console.log("Extracted RGBA buffer:", rgbaData);
 
@@ -903,6 +1010,9 @@ const runNewExport = async (tempFolderPath) => {
             if (maskedBuffer) {
                 await encodeAndSavePNG(maskedBuffer, width, height, 'temp_image_inpaint.png');
             }
+            else {
+                await fastSavePng(rgbaData, width, height, 'temp_image_inpaint.png');
+            }
 
             console.log("New export completed successfully.");
         } catch (error) {
@@ -912,8 +1022,7 @@ const runNewExport = async (tempFolderPath) => {
 };
 
 
-// ────────────────────────────────────────────────────────────────
-// Export all functions so that they can be used elsewhere
+/* Export all functions so that they can be used elsewhere */
 module.exports = {
     createSelectionChannel,
     saveSelection,
@@ -929,7 +1038,6 @@ module.exports = {
     insertAsLayer,
     openSmartObject,
     matchSkinTones,
-    // New exports for imaging API export process.
     documentPixelsChanged,
 	extractDocumentPixels,
 	getSelectionMask,
