@@ -1,12 +1,12 @@
 {
   "id": "Photoshop-ComfyUI_v2",
   "name": "Photoshop-ComfyUI Plugin 2",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "main": "index.html",
   "host": [
     {
       "app": "PS",
-      "minVersion": "22.0.1"
+      "minVersion": "24.0.1"
     }
   ],
   "manifestVersion": 5,
@@ -84,19 +84,19 @@
       "id": "popout",
       "minimumSize": {
         "width": 350,
-        "height": 150
+        "height": 153
       },
       "maximumSize": {
         "width": 350,
-        "height": 190
+        "height": 153
       },
       "preferredDockedSize": {
         "width": 350,
-        "height": 150
+        "height": 153
       },
       "preferredFloatingSize": {
         "width": 350,
-        "height": 150
+        "height": 153
       },
       "icons": [
         {

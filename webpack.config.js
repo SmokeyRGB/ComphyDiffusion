@@ -23,6 +23,12 @@ module.exports = {
                 }
             }
         ]
+    },
+    resolve: {
+        alias: {
+            "upng-js": "upng-js/UPNG.js",
+            "gsap": "gsap/dist/gsap.min.js"
+        }
     }
 };
 
