@@ -10,9 +10,9 @@ from comfyui_api.api.websocket_api import interupt_prompt
 from asyncio import Queue
 import time
 
-PLUGIN_DATA_DIR = r"C:\Users\Sammy\AppData\Local\Temp\Adobe\UXP\PluginsStorage\PHSP\24\Developer\Photoshop-ComfyUI_v2\PluginData"
-OUTPUT_DIR = r"C:\Users\Sammy\AppData\Local\Temp\Adobe\UXP\PluginsStorage\PHSP\24\Developer\Photoshop-ComfyUI_v2\Output"
-PREVIEW_DIR = r"C:\Users\Sammy\AppData\Local\Temp\Adobe\UXP\PluginsStorage\PHSP\24\Developer\Photoshop-ComfyUI_v2\Previews"
+PLUGIN_DATA_DIR = r"C:\Users\Sammy\AppData\Local\Temp\Adobe\UXP\PluginsStorage\PHSP\26\Developer\Photoshop-ComfyUI_v2\PluginData"
+OUTPUT_DIR = r"C:\Users\Sammy\AppData\Local\Temp\Adobe\UXP\PluginsStorage\PHSP\26\Developer\Photoshop-ComfyUI_v2\Output"
+PREVIEW_DIR = r"C:\Users\Sammy\AppData\Local\Temp\Adobe\UXP\PluginsStorage\PHSP\26\Developer\Photoshop-ComfyUI_v2\Previews"
 COMFYUI_SERVER_ADDRESS = "127.0.0.1:8888"  # newly added constant
 
 class PreviewHandler(FileSystemEventHandler):
@@ -86,6 +86,8 @@ async def handler(websocket, path=None):
     print("WebSocket client connected")
     loop = asyncio.get_running_loop()  # Get the current event loop
     fs_preview_queue = Queue()
+
+    os.makedirs(PREVIEW_DIR, exist_ok=True)
     
     # Set up the file system observer with our preview handler.
     observer = Observer()
@@ -140,22 +142,24 @@ async def handler(websocket, path=None):
                 # Once generation is done, set the flag to skip the final duplicate event.
                 event_handler.suppress_next = True
 
-                status_update = {"genCompleted": True}
-                status_path = os.path.join(PLUGIN_DATA_DIR, "status.json")
-                with open(status_path, 'w') as f:
-                    json.dump(status_update, f)
-
-                await websocket.send(json.dumps({
-                    "status": "success",
-                    "message": "Image generation completed",
-                    "images": images
-                }))
+                # status_update = {"status": "completed"}
+                # status_path = os.path.join(PLUGIN_DATA_DIR, "status.json")
+                # with open(status_path, 'w') as f:
+                #     json.dump(status_update, f)
+                if len(images) == 0:
+                    await websocket.send(json.dumps({"status": "cancelled", "reason":"completed", "message": "Inference completed but no images generated. Probably aborted?"}))
+                else:
+                    await websocket.send(json.dumps({
+                        "status": "success",
+                        "message": "Image generation completed",
+                        "images": images
+                    }))
 
             elif data.get("command") == "cancel":
                 # Handle the cancel command
                 print("Received cancel command")
                 interupt_prompt(COMFYUI_SERVER_ADDRESS)  # updated call with server address
-                await websocket.send(json.dumps({"status": "cancelled", "message": "Generation cancelled"}))
+                await websocket.send(json.dumps({"status": "cancelled","reason":"cancelled",  "message": "Generation cancelled"}))
 
             else:
                 await websocket.send(json.dumps({"status": "error", "message": "Unknown command"}))

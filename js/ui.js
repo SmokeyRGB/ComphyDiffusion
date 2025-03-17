@@ -1,5 +1,8 @@
 const { loadPrompt, savePrompt } = require('./prompt_handeling');
 
+const bundle = require('../dist/bundle.js');
+const animatePanel = bundle.Plugin.animatePanel;
+
 const seedControl = require('./seed_control');
 let autoQueue = false;
 
@@ -263,6 +266,7 @@ function attachZoomPanListeners(img) {
       internalOffsetX = ZOOM_LEVEL * internalOffsetX - (ZOOM_LEVEL - 1) * e.clientX;
       internalOffsetY = ZOOM_LEVEL * internalOffsetY - (ZOOM_LEVEL - 1) * e.clientY;
       
+
       img.style.width = (originalW * ZOOM_LEVEL) + "px";
       img.style.height = (originalH * ZOOM_LEVEL) + "px";
 
@@ -482,10 +486,10 @@ const updateGenerationStatus = async (status) => {
           }
           else {
             document.getElementById('queueButton').style.backgroundColor = ' rgba(116, 255, 127, 0.21)';
-            //document.getElementById('queueButton').disabled = true;
+            document.getElementById('queueButton').disabled = false;
             document.getElementById('queueButton').innerHTML= '<svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="1" d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6Z"/><path stroke="currentColor" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>';
           }
-            generationState = "idle"
+            generationState = "idle";
         }
 
     } catch (error) {

@@ -46,39 +46,69 @@ async function connectComfyUIWebsocket(pluginFolderPath) {
     websocket.onmessage = handleWebsocketMessage;
 }
 
-async function handleWebsocketMessage(evt) {
-    try {
-        const response = JSON.parse(evt.data);
-        console.log("Received message from WebSocket:", response);
+// Add a helper to convert Uint8Array to base64 string
+function uint8ToBase64(uint8Array) {
+    let binary = '';
+    for (let i = 0; i < uint8Array.length; i++) {
+        binary += String.fromCharCode(uint8Array[i]);
+    }
+    return btoa(binary);
+}
 
-        if (response.type === 'progress') {
+async function handleWebsocketMessage(evt) {
+    let response;
+    try {
+        // Ensure evt.data is a string
+        const dataStr = typeof evt.data === "string" ? evt.data : String(evt.data);
+        response = JSON.parse(dataStr);
+    } catch (e) {
+        console.error("Failed to parse websocket message:", e);
+        return;
+    }
+    console.log("Received message from WebSocket:", response);
+
+    try {
+        if (response.status === 'progress') {
             ui.display_progress(response.progress);
-        }
-        else if (response.status === 'success') {
-            console.log("Image generation completed successfully");
-            // Extract the base64 image data from the first image object in the array
+        } else if (response.status === 'success') {
+            // ...existing success code...
+            if (!response.images || response.images.length === 0) {
+                console.log("No image data found in response:", response);
+                await ui.updateGenerationStatus("completed");
+                return;
+            }
             const finalImageData = response.images[0].image_data;
-            // Save the image to temporary folder
             await saveImageToTempFolder(finalImageData);
-            // Call the new UI function to update the final preview using the image data
             await ui.updateFinalPreviewFromData(finalImageData);
-            
-            // Save the original image dimensions for later use
             const img = document.querySelector("#generationPreview img");
             img.dataset.originalWidth = img.style.width || img.getBoundingClientRect().width + "px";
             img.dataset.originalHeight = img.style.height || img.getBoundingClientRect().height + "px";
-
             await ui.updateGenerationStatus("completed");
         } else if (response.status === 'preview') {
-            const base64Image = btoa(String.fromCharCode(...new Uint8Array(response.image)));
+            let base64Image;
+            // Check if response.image is already a string or an array
+            if (typeof response.image === "string") {
+                base64Image = response.image;
+            } else if (Array.isArray(response.image)) {
+                base64Image = uint8ToBase64(new Uint8Array(response.image));
+            } else {
+                throw new Error("Unexpected image format in preview response");
+            }
             await ui.updateTempPreview(base64Image);
+        } else if (response.status === 'cancelled') {
+            if (response.reason === 'cancelled') {
+                document.getElementById('queueButton').disabled = true;
+            }
+            else if (response.reason === 'completed') {
+                document.getElementById('queueButton').disabled = false;
+                ui.resetQueueButton();
+                await ui.updateGenerationStatus("completed");
+            }
+            
+
         }
-        else if (response.status === 'cancelled') {
-            ui.resetQueueButton();
-            await ui.updateGenerationStatus("completed");
-        }
-    } catch (e) {
-        console.log("Error parsing websocket message:", e);
+    } catch (err) {
+        console.error("Error processing websocket response:", err);
     }
 }
 
