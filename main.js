@@ -13,6 +13,14 @@ const promptHandling = require('./js/prompt_handeling.js');
 const websocketModule = require('./js/websocket.js'); // Import websocket module
 const utils = require('./js/utils.js'); // Import utils module
 
+// Import animatePanel from the gsap webpack bundle
+const bundle = require('./dist/bundle.js');
+const animatePanel = bundle.Plugin.animatePanel;
+if (typeof animatePanel !== "function") {
+    throw new Error("animatePanel is not properly imported!");
+}
+
+
 
 
 const shell = require("uxp").shell;
@@ -83,6 +91,17 @@ photoshop.action.addNotificationListener([
 ], (eventName, descriptor) => {
     documentChanged = true;
 });
+
+photoshop.action.addNotificationListener([
+    { event: "historyStateChanged" }
+], (eventName, descriptor) => {
+    if (autoQueue) {
+        documentChanged = true;
+        console.log("History state changed. Running autoQueue check.")
+        autoQueueCheck().catch(console.error);
+    }
+}
+);
 
 // Reset flag when a new document opens.
 photoshop.action.addNotificationListener([{ event: "newDocument" }], () => {
@@ -176,6 +195,17 @@ const getEmbeddedPrompt = async () => {
     return prompt
 }
 
+const pickWorkflow = async () => {
+    fs.getFileForOpening({ types: ["json"] }).then(file => {
+        workflow_path = file.nativePath;
+        if (workflow_path != undefined) {
+            console.log("Workflow selected: " + workflow_path);
+            document.getElementById("pickWorkflow").style.stroke = "#177fff";
+            document.getElementById("workflowName").innerText = workflow_path.replace(/^.*[\\\/]/, '');
+        }
+    });
+}
+
 // UI MANIPULATION
 
 let generationState = "idle"; // Add a state logger
@@ -193,10 +223,13 @@ const run_queue = async () => {
         return;
     }
 
-    if (await utils.selectionActive()) {
+    if (await utils.selectionActive() || autoQueue) {
         try {
-            await imageActions.saveSelection();
-            console.log("Selection saved.")
+            if (await utils.selectionActive()){
+                await imageActions.saveSelection();
+                console.log("Selection saved.")
+            }
+            
 
             // NEW: Only proceed if document has been modified.
             if (documentChanged && !app.activeDocument.saved) {
@@ -254,6 +287,12 @@ const cancel_queue = async () => {
         }
     } else {
         console.log("No generation running.");
+        if (websocketModule.getWebsocket() && websocketModule.getWebsocket().readyState === WebSocket.OPEN) {
+            console.log("Canceling");
+            websocketModule.sendCancelCommand();
+        } else {
+            console.log("Error Canceling: Python Server not connected yet. Connect first");
+        }
     }
 }
 
@@ -347,12 +386,6 @@ entrypoints.setup({
                     case "createSelectionChannel":
                         imageActions.createSelectionChannel();
                         break;
-                    case "pickWorkflow":
-                        fs.getFileForOpening({ types: ["json"] }).then(file => {
-                            workflow_path = file.nativePath;
-                            console.log("Selected workflow: " + workflow_path);
-                        });
-                        break;
                     case "addNoiseLayer":
                         imageActions.addNoiseLayer();
                         break;
@@ -370,7 +403,7 @@ entrypoints.setup({
                 { id: "about", label: "About this plugin ❤" },
 
                 { id: "spacer1", label: "-" },
-                { id: "pickWorkflow", label: "Select a workflow to run (experimental)" },
+
                 { id: "addNoiseLayer", label: "Add layer to match image noise" },
                 { id: "matchSkinTones", label: "Use foreground and background color to match skin tones" },
                 { id: "spacer2", label: "-" },
@@ -390,10 +423,19 @@ entrypoints.setup({
                 body.appendChild(content)
             },
             invokeMenu(id) {
-
+                switch (id) {
+                    case "cancelQueue":
+                        cancel_queue();
+                        break;
+                    case "pickWorkflow":
+                        pickWorkflow();
+                        break;
+                }
             },
             menuItems: [
-                { id: "TestObjectMiniQueue", label: "Just for testing, ignore." },
+                { id: "pickWorkflow", label: "Select a workflow to run (experimental)" },
+                { id: "cancelQueue", label: "Cancel Queue 🚫" },
+
             ]
         },
 
@@ -450,33 +492,38 @@ const animationInterval = setInterval(ui.animateObjects, 10)
 
 const autoQueueCheck = async () => {
     if (autoQueue && generationState === "idle") {
-        if (await imageActions.documentPixelsChanged()) { // Check if document has changed
-            console.log("Document has changed. Running queue.")
-            await run_queue();
-        }
+        await run_queue();
     }
     else if (autoQueue && generationState === "running") {
-        if (await imageActions.documentPixelsChanged()) { // Check if document has changed
-            console.log("Document has changed. Running queue.")
-            await cancel_queue();
-            await run_queue();
-        }   
+            await cancel_queue().then(() => run_queue());
     }
 }
 
-const autoQueueInterval = setInterval(() => {
-    photoshop.core.executeAsModal(async () => {
-        await autoQueueCheck().catch(console.error); })
-}, autoQueueDelay);
+// const autoQueueInterval = setInterval(() => {
+//     photoshop.core.executeAsModal(async () => {
+//         await autoQueueCheck().catch(console.error); })
+// }, autoQueueDelay);
 
 // GENERATION PREVIEW HANDELING /////////////////
 
 // INSERT PREVIEW HANDELING
 
+document.getElementById("MainPanel").addEventListener('mouseenter', () => {
+    //gsap.to(document.getElementById("insertionOptions"), { opacity: 1, duration: 0.25 });
+    animatePanel(document.getElementById("insertionOptions"), "top", -50, -5, 300)
+}
+)
+
+document.getElementById("MainPanel").addEventListener('mouseleave', () => {
+    animatePanel(document.getElementById("insertionOptions"), "top", -5, -50, 300)
+}
+)
+
 document.getElementById("insertAsLayer").addEventListener('click', () => {
     console.log("Inserting as Layer");
     imageActions.insertAsLayer(insertAs, tempFolderPath);
 });
+
 
 document.getElementById("insertSettings").addEventListener("change", evt => {
     console.log(`Selected item: ${evt.target.selectedIndex}`);
@@ -498,6 +545,10 @@ document.getElementById("insertSettings").addEventListener("change", evt => {
             insertAs = 'whole'
     }
 })
+
+document.getElementById("pickWorkflow").addEventListener('click', () => {
+    pickWorkflow();
+});
 
 // PREVIEW SIZE SLIDER
 //document.getElementById("previewSizeSlider").addEventListener('input', ui.changePreviewSize)

@@ -164,7 +164,7 @@ body {
     width: 100%;
     max-width: 500px; /* Limit width to 500px */
     border-radius: 5px 5px 0 0;
-    padding: 5px 5px 10px; /* Added top padding to account for overlapping button */
+    padding: 5px 5px 0px; /* Added top padding to account for overlapping button */
     box-sizing: border-box;
     color: #fff;
     
@@ -174,7 +174,6 @@ body {
     gap: 8px;
 
     /* Max height with scrolling if needed */
-    min-height: 90vh;
     overflow-y: auto;
     
     /* Prevent any unwanted margin/spacing */
@@ -229,7 +228,7 @@ body {
         position: absolute;
         width: 100%;
         background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.0));
-    top: 0;
+    top: -50px;
     left: 0;
     justify-content: center;
     align-items: center;

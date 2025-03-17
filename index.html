@@ -17,13 +17,30 @@
       </div>
     </div>
     <!-- Insertion Options & Generation Options -->
-    <div class="insertion-options">
+    <div class="insertion-options" id="insertionOptions">
 <!--         <sp-dropdown id="copyOrInsert" size="m" style="width: 76px; font-size: 13px; margin: 0; padding: 0;" placeholder="Paste">
         <sp-menu slot="options">
             <sp-menu-item>Paste</sp-menu-item>
             <sp-menu-item>Copy</sp-menu-item>
         </sp-menu>
         </sp-dropdown> -->
+        <sp-overlay style="position: absolute; left: 10px;">
+          <sp-action-button slot="trigger" id="pickWorkflow" style="width: 36px; padding-left: 8px; stroke: #ffffff; fill: none">
+            <div slot="icon">
+              <svg width="18px" height="18px" viewBox="0 0 24.00 24.00" xmlns="http://www.w3.org/2000/svg">
+                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                <g id="SVGRepo_iconCarrier"><defs><style>.a{stroke-linecap:round;stroke-linejoin:round;stroke-width:1.008;}</style></defs><circle class="a" cx="12" cy="6" r="3"></circle><rect class="a" height="5" rx="2" width="8" x="2" y="16"></rect><rect class="a" height="5" rx="2" width="8" x="14" y="16"></rect><path class="a" d="M6,16V14a2,2,0,0,1,2-2h8a2,2,0,0,1,2,2v2"></path><line class="a" x1="12" x2="12" y1="9" y2="12"></line></g></svg>
+            </div>
+          </sp-action-button>
+
+          <sp-popover offset="8" placement="right" alignment="right" appearance="none" slot="hover" style="border-radius: 5px;">
+            <sp-body id="workflowName" style="padding: 3px 8px; width: fit-content; font-size: 12px; height: 12px;">
+                Pick Workflow
+            </sp-body>
+          </sp-popover>
+        </sp-overlay>
+
         <sp-dropdown id="insertSettings" size="m" style="width: 120px; font-size: 13px; margin: 0; padding: 0;" placeholder="Whole Layer">
         <sp-menu slot="options">
             <sp-menu-item id="wholeLayerOption">Whole Layer</sp-menu-item>
@@ -113,25 +130,27 @@
             <sp-textfield id="seed" placeholder="Seed" style="flex-grow: 2; min-width: 150px; max-width: 175px;"></sp-textfield>
             <sp-textfield id="cfg" placeholder="CFG" style="flex-grow: 1; min-width: 50px; max-width: 50px; display: none;"></sp-textfield>
             <sp-action-button id="randomizeSeed" style="display: flex; align-items: center; justify-content: center;">
-                🎲
+                <a id="randomizeSeedIcon">🎲</a>
             </sp-action-button>
         </div>
             <!-- New queue button container (moved below promptOverlay) -->
-    <div id="queueButtonContainer">
-      <sp-button id="queueButton" variant="cta" style="z-index: 5;">Queue</sp-button>
-      <div id="queueButtonProgress" style="
-      position: absolute;
-      top: 0;
-      left: 50%;
-      width: 0;
-      height: 97%;
-      background-color: rgba(255, 255, 255, 0.5);
-      transition: width 0.3s ease, left 0.3s ease;
-      z-index: -1;
-      pointer-events: none;
-      border-radius: 16px;">
+   
+      <div id="queueButtonContainer" >
+        <sp-button id="queueButton" variant="cta" style="z-index: 5;" slot="trigger">Queue</sp-button>
+        <div id="queueButtonProgress" style="
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 0;
+        height: 97%;
+        background-color: rgba(255, 255, 255, 0.5);
+        transition: width 0.3s ease, left 0.3s ease;
+        z-index: -1;
+        pointer-events: none;
+        border-radius: 16px;">
+        </div>
       </div>
-  </div>
+
 </div>
     </div>
 
