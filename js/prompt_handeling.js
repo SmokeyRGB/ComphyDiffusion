@@ -39,6 +39,7 @@ async function savePrompt(tempFolderPath) {
     const seed = document.getElementById('seed').value;
     let steps = document.getElementById('steps').value;
     let cfg = document.getElementById('cfg').value;
+    const denoise = Math.round(document.getElementById('denoiseSlider').value * 100) / 100;
 
     if (steps == '') {
         steps = 20;
@@ -56,7 +57,8 @@ async function savePrompt(tempFolderPath) {
             'negative': negative_prompt,
             'seed': seed,
             'steps': steps,
-            'cfg': cfg
+            'cfg': cfg,
+            'denoise': denoise,
         };
 
         console.log('Prompt saved: ' + JSON.stringify(prompt));
@@ -76,6 +78,8 @@ async function loadPrompt(tempFolderPath) {
         document.getElementById('seed').value = prompt['seed'];
         document.getElementById('cfg').value = prompt['cfg'];
         document.getElementById('steps').value = prompt['steps'];
+        document.getElementById('denoiseSlider').value = prompt['denoise'];
+        document.getElementById('denoiseSlider').dispatchEvent(new Event('input'));
         return prompt;
     } catch (e) {
         console.log('Prompt could not be loaded: ' + e);
