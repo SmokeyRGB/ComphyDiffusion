@@ -68,7 +68,7 @@ async function handleWebsocketMessage(evt) {
     console.log("Received message from WebSocket:", response);
 
     try {
-        if (response.status === 'progress') {
+        if (response.type === 'progress') {
             ui.display_progress(response.progress);
         } else if (response.status === 'success') {
             // ...existing success code...
@@ -106,6 +106,10 @@ async function handleWebsocketMessage(evt) {
             }
             
 
+        }
+        else if (response.status === 'error') {
+            console.error("Error response from WebSocket:", response);
+            await ui.updateGenerationStatus("completed");
         }
     } catch (err) {
         console.error("Error processing websocket response:", err);
