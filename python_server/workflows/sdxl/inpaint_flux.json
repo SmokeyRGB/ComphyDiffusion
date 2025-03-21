@@ -200,7 +200,7 @@
   },
   "51": {
     "inputs": {
-      "unet_name": "FLUX1\\flux1-dev-Q5_K_M.gguf"
+      "unet_name": "FLUX1\\flux1-fill-dev-fp16-Q5_0-GGUF.gguf"
     },
     "class_type": "UnetLoaderGGUF",
     "_meta": {
@@ -247,41 +247,6 @@
       "title": "SamplerCustomAdvanced"
     }
   },
-  "71": {
-    "inputs": {
-      "strength": 0.7000000000000001,
-      "start_percent": 0,
-      "end_percent": 1,
-      "positive": [
-        "73",
-        0
-      ],
-      "negative": [
-        "85",
-        0
-      ],
-      "control_net": [
-        "74",
-        0
-      ],
-      "vae": [
-        "25",
-        0
-      ],
-      "image": [
-        "1",
-        1
-      ],
-      "mask": [
-        "1",
-        2
-      ]
-    },
-    "class_type": "ControlNetInpaintingAliMamaApply",
-    "_meta": {
-      "title": "ControlNetInpaintingAliMamaApply"
-    }
-  },
   "73": {
     "inputs": {
       "clip_l": "a goat looking at the background stepping on brown leaves",
@@ -297,15 +262,6 @@
       "title": "CLIPTextEncodeFlux (Positive)"
     }
   },
-  "74": {
-    "inputs": {
-      "control_net_name": "flux-controlenet-inpainting-beta.safetensors"
-    },
-    "class_type": "ControlNetLoader",
-    "_meta": {
-      "title": "Load ControlNet Model"
-    }
-  },
   "80": {
     "inputs": {
       "cfg": 1,
@@ -314,11 +270,11 @@
         0
       ],
       "positive": [
-        "71",
+        "88",
         0
       ],
       "negative": [
-        "71",
+        "88",
         1
       ]
     },
@@ -361,6 +317,35 @@
     "class_type": "LoadImage",
     "_meta": {
       "title": "contex mask"
+    }
+  },
+  "88": {
+    "inputs": {
+      "noise_mask": true,
+      "positive": [
+        "73",
+        0
+      ],
+      "negative": [
+        "85",
+        0
+      ],
+      "vae": [
+        "25",
+        0
+      ],
+      "pixels": [
+        "1",
+        1
+      ],
+      "mask": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "InpaintModelConditioning",
+    "_meta": {
+      "title": "InpaintModelConditioning"
     }
   }
 }

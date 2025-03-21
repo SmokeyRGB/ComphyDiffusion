@@ -3,8 +3,8 @@
     "inputs": {
       "context_expand_pixels": 20,
       "context_expand_factor": 1.4000000000000001,
-      "fill_mask_holes": true,
-      "blur_mask_pixels": 16,
+      "fill_mask_holes": false,
+      "blur_mask_pixels": 10,
       "invert_mask": false,
       "blend_pixels": 16,
       "rescale_algorithm": "bicubic",
@@ -18,11 +18,15 @@
       "max_height": 1024,
       "padding": 32,
       "image": [
-        "20",
+        "35",
         0
       ],
       "mask": [
-        "20",
+        "3",
+        1
+      ],
+      "optional_context_mask": [
+        "60",
         1
       ]
     },
@@ -72,7 +76,7 @@
   },
   "10": {
     "inputs": {
-      "ckpt_name": "Inpaint\\inpaintSDXLPony_inpaintPony.safetensors"
+      "ckpt_name": "SDXL\\dreamshaperXL10_alpha2Xl10.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
@@ -81,9 +85,9 @@
   },
   "11": {
     "inputs": {
-      "text": "a cloud in the sky",
+      "text": "big angry wolf, black pelt, resting hand on wolf, wolf with with spiked collar, sharp teeth,",
       "clip": [
-        "10",
+        "61",
         1
       ]
     },
@@ -94,9 +98,9 @@
   },
   "12": {
     "inputs": {
-      "text": "ugly, text, watermark",
+      "text": "bad quality, worst quality, text, watermark",
       "clip": [
-        "10",
+        "61",
         1
       ]
     },
@@ -107,27 +111,27 @@
   },
   "14": {
     "inputs": {
-      "seed": 908511891192116,
+      "seed": 313622602460703,
       "steps": 20,
       "cfg": 8,
       "sampler_name": "euler_ancestral",
-      "scheduler": "ddim_uniform",
-      "denoise": 1,
+      "scheduler": "normal",
+      "denoise": 0.6,
       "model": [
-        "10",
+        "61",
         0
       ],
       "positive": [
-        "19",
+        "36",
         0
       ],
       "negative": [
-        "19",
+        "36",
         1
       ],
       "latent_image": [
-        "19",
-        2
+        "55",
+        0
       ]
     },
     "class_type": "KSampler",
@@ -151,9 +155,21 @@
       "title": "VAE Decode"
     }
   },
-  "19": {
+  "35": {
     "inputs": {
-      "noise_mask": true,
+      "image": "temp_image_rgb.jpg",
+      "upload": "image"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "36": {
+    "inputs": {
+      "strength": 0.3,
+      "start_percent": 0,
+      "end_percent": 0.7000000000000001,
       "positive": [
         "11",
         0
@@ -162,47 +178,100 @@
         "12",
         0
       ],
+      "control_net": [
+        "37",
+        0
+      ],
+      "image": [
+        "59",
+        0
+      ],
       "vae": [
         "10",
         2
-      ],
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "Apply ControlNet"
+    }
+  },
+  "37": {
+    "inputs": {
+      "control_net_name": "controlnet-union-sdxl-1.0.safetensors"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "Load ControlNet Model"
+    }
+  },
+  "50": {
+    "inputs": {
+      "control_net_name": "controlnet-union-sdxl-1.0.safetensors"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "Load ControlNet Model"
+    }
+  },
+  "55": {
+    "inputs": {
       "pixels": [
         "1",
         1
       ],
-      "mask": [
-        "1",
+      "vae": [
+        "10",
         2
       ]
     },
-    "class_type": "InpaintModelConditioning",
+    "class_type": "VAEEncode",
     "_meta": {
-      "title": "InpaintModelConditioning"
+      "title": "VAE Encode"
     }
   },
-  "20": {
+  "59": {
     "inputs": {
-      "mode": "factors",
-      "expand_up_pixels": 0,
-      "expand_up_factor": 1,
-      "expand_down_pixels": 0,
-      "expand_down_factor": 1,
-      "expand_left_pixels": 0,
-      "expand_left_factor": 1,
-      "expand_right_pixels": 0,
-      "expand_right_factor": 1,
+      "safe": "enable",
+      "resolution": 768,
       "image": [
-        "3",
-        0
-      ],
-      "mask": [
-        "3",
+        "1",
         1
       ]
     },
-    "class_type": "InpaintExtendOutpaint",
+    "class_type": "PiDiNetPreprocessor",
     "_meta": {
-      "title": "Extend Image for Outpainting"
+      "title": "PiDiNet Soft-Edge Lines"
+    }
+  },
+  "60": {
+    "inputs": {
+      "image": "example.png",
+      "upload": "image"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "61": {
+    "inputs": {
+      "PowerLoraLoaderHeaderWidget": {
+        "type": "PowerLoraLoaderHeaderWidget"
+      },
+      "➕ Add Lora": "",
+      "model": [
+        "10",
+        0
+      ],
+      "clip": [
+        "10",
+        1
+      ]
+    },
+    "class_type": "Power Lora Loader (rgthree)",
+    "_meta": {
+      "title": "Power Lora Loader (rgthree)"
     }
   }
 }

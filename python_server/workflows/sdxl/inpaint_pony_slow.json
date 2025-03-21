@@ -1,9 +1,9 @@
 {
   "1": {
     "inputs": {
-      "context_expand_pixels": 20,
+      "context_expand_pixels": 10,
       "context_expand_factor": 1.4000000000000001,
-      "fill_mask_holes": true,
+      "fill_mask_holes": false,
       "blur_mask_pixels": 16,
       "invert_mask": false,
       "blend_pixels": 16,
@@ -72,7 +72,7 @@
   },
   "10": {
     "inputs": {
-      "ckpt_name": "SDXL\\jibMixRealisticXL_v90BetterBodies.safetensors"
+      "ckpt_name": "Pony\\Inpaint\\inpaintSDXLPony_inpaintPony.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
@@ -81,9 +81,9 @@
   },
   "11": {
     "inputs": {
-      "text": "a cloud in the sky",
+      "text": "woman, natural medium sized breasts,  sunset, golden hour, handjob, penis, 8k",
       "clip": [
-        "25",
+        "28",
         1
       ]
     },
@@ -94,9 +94,9 @@
   },
   "12": {
     "inputs": {
-      "text": "ugly, text, watermark",
+      "text": "bad quality, worst quality, text, watermark, standing, slim",
       "clip": [
-        "25",
+        "28",
         1
       ]
     },
@@ -107,14 +107,14 @@
   },
   "14": {
     "inputs": {
-      "seed": 789733641086421,
-      "steps": 20,
+      "seed": 959956585674855,
+      "steps": 45,
       "cfg": 8,
-      "sampler_name": "euler",
+      "sampler_name": "euler_ancestral",
       "scheduler": "normal",
       "denoise": 1,
       "model": [
-        "25",
+        "28",
         0
       ],
       "positive": [
@@ -197,20 +197,20 @@
   "23": {
     "inputs": {
       "upscale_by": 2,
-      "seed": 844352706307754,
+      "seed": 52146630442561,
       "steps": 15,
       "cfg": 8,
-      "sampler_name": "dpmpp_2m",
-      "scheduler": "karras",
-      "denoise": 0.25,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 0.1,
       "mode_type": "Linear",
       "tile_width": 768,
       "tile_height": 768,
       "mask_blur": 8,
       "tile_padding": 32,
-      "seam_fix_mode": "None",
+      "seam_fix_mode": "Band Pass",
       "seam_fix_denoise": 0.5,
-      "seam_fix_width": 256,
+      "seam_fix_width": 64,
       "seam_fix_mask_blur": 16,
       "seam_fix_padding": 16,
       "force_uniform_tiles": true,
@@ -224,15 +224,15 @@
         0
       ],
       "positive": [
-        "11",
+        "26",
         0
       ],
       "negative": [
-        "12",
+        "27",
         0
       ],
       "vae": [
-        "10",
+        "25",
         2
       ],
       "upscale_model": [
@@ -247,7 +247,7 @@
   },
   "24": {
     "inputs": {
-      "model_name": "SwinIR_4x.pth"
+      "model_name": "4x_NMKD-Siax_200k.pth"
     },
     "class_type": "UpscaleModelLoader",
     "_meta": {
@@ -256,11 +256,51 @@
   },
   "25": {
     "inputs": {
-      "lora_name": "Detail\\detailed_notrigger.safetensors",
-      "strength_model": 1,
-      "strength_clip": 1,
+      "ckpt_name": "SDXL\\jibMixRealisticXL_v90BetterBodies.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "26": {
+    "inputs": {
+      "text": "woman, natural medium sized breasts,  sunset, golden hour, handjob, penis, 8k",
+      "clip": [
+        "25",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt) - Positive"
+    }
+  },
+  "27": {
+    "inputs": {
+      "text": "bad quality, worst quality, text, watermark, standing, slim",
+      "clip": [
+        "25",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt) - Negative"
+    }
+  },
+  "28": {
+    "inputs": {
+      "lora_01": "Pony\\Styles\\PONY_VULVA_WIKICOMMONS.safetensors",
+      "strength_01": 1,
+      "lora_02": "None",
+      "strength_02": 1,
+      "lora_03": "None",
+      "strength_03": 1,
+      "lora_04": "None",
+      "strength_04": 1,
       "model": [
-        "26",
+        "10",
         0
       ],
       "clip": [
@@ -268,60 +308,9 @@
         1
       ]
     },
-    "class_type": "LoraLoader",
+    "class_type": "Lora Loader Stack (rgthree)",
     "_meta": {
-      "title": "Load LoRA"
-    }
-  },
-  "26": {
-    "inputs": {
-      "model1": [
-        "10",
-        0
-      ],
-      "model2": [
-        "27",
-        0
-      ]
-    },
-    "class_type": "ModelMergeAdd",
-    "_meta": {
-      "title": "ModelMergeAdd"
-    }
-  },
-  "27": {
-    "inputs": {
-      "multiplier": 1,
-      "model1": [
-        "28",
-        0
-      ],
-      "model2": [
-        "29",
-        0
-      ]
-    },
-    "class_type": "ModelMergeSubtract",
-    "_meta": {
-      "title": "ModelMergeSubtract"
-    }
-  },
-  "28": {
-    "inputs": {
-      "ckpt_name": "Inpaint\\sd_xl_base_1.0_inpainting_0.1.safetensors"
-    },
-    "class_type": "CheckpointLoaderSimple",
-    "_meta": {
-      "title": "Load Checkpoint"
-    }
-  },
-  "29": {
-    "inputs": {
-      "ckpt_name": "sd_xl_base_1.0_fp16_vae.safetensors"
-    },
-    "class_type": "CheckpointLoaderSimple",
-    "_meta": {
-      "title": "Load Checkpoint"
+      "title": "Lora Loader Stack (rgthree)"
     }
   }
 }
