@@ -118,8 +118,9 @@ async function handleWebsocketMessage(evt) {
 
 async function saveImageToTempFolder(base64Data) {
     try {
-        const tempFolder = await fs.getTemporaryFolder();
-        const file = await tempFolder.createFile("temp_image_preview.png", { overwrite: true });
+        const tempFolderPath = await fs.getTemporaryFolder();
+        const dataFolderPath = await fs.getDataFolder();
+        const file = await dataFolderPath.createFile("temp_image_preview.png", { overwrite: true });
         const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
         await file.write(binaryData);
         console.log("Response image saved to temporary folder:", file.nativePath);

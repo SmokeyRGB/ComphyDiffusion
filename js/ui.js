@@ -113,20 +113,10 @@ const hideAdvPrompts = async () => {
     advPromptingBtn.style.backgroundColor = advancedPrompting ? "#1e1c19" : "";
 
     // Save prompt state
-    await savePrompt(tempFolderPath);
+    await savePrompt(dataFolderPath);
 };
 
 document.getElementById("advPromptingButton").addEventListener('click', hideAdvPrompts);
-
-// Add event listeners for prompt changes
-document.getElementById("positivePrompt").addEventListener('input', () => savePrompt(tempFolderPath));
-document.getElementById("negativePrompt").addEventListener('input', () => savePrompt(tempFolderPath));
-document.getElementById("steps").addEventListener('input', () => savePrompt(tempFolderPath));
-document.getElementById("cfg").addEventListener('input', () => savePrompt(tempFolderPath));
-
-
-
-
 
 // Updated helper to attach zoom and pan events using mouse events for Spectrum (Adobe UXP)
 // In attachZoomPanListeners we use a zoomLevel constant.
@@ -330,7 +320,7 @@ const updatePreview = async (center = false) => {
   };
   try {
     if (updateLivePreview) {
-      img_element.src = 'file://' + tempFolderPath.nativePath + '/temp_image_preview.png';
+      img_element.src = 'file://' + dataFolderPath.nativePath + '/temp_image_preview.png';
       updateLivePreview = false;
     } else {
       img_element.src = "https://i.gifer.com/XVo6.gif";
@@ -425,11 +415,11 @@ const updateTempPreview = async (previewData) => {
     }
 };
 
-const updateFinalPreview = async (tempFolderPath) => {
+const updateFinalPreview = async (dataFolderPath) => {
     try {
         const fs = require('uxp').storage.localFileSystem;
         // Get the preview image file.
-        const previewFile = await tempFolderPath.getEntry("temp_image_preview.png");
+        const previewFile = await dataFolderPath.getEntry("temp_image_preview.png");
         // Get the preview <img> element (assumes it exists inside an element with id 'generationPreview')
         const previewElement = document.querySelector('#generationPreview img');
         if (previewElement) {
@@ -473,7 +463,7 @@ const updateFinalPreviewFromData = async (base64Data) => {
 
 const updateGenerationStatus = async (status) => {
     try {
-        let statusFile = await tempFolderPath.createFile('status.json', { overwrite: true });
+        let statusFile = await dataFolderPath.createFile('status.json', { overwrite: true });
         const data = { "status": status }; // status is either "completed" or "running"
         await statusFile.write(JSON.stringify(data), { append: false });
         console.log("Updated generation status file to:", status);
@@ -504,12 +494,12 @@ const updateAutoQueue = (newAutoQueue) => {
 const getGenerationState = async () => {
     let data;
     try { 
-        let statusFile = await tempFolderPath.getEntry('status.json');
+        let statusFile = await dataFolderPath.getEntry('status.json');
         data = JSON.parse((await statusFile.read()));
     }
     catch (e) {
         console.log("Error loading generation status file:", e);
-        let statusFile = await tempFolderPath.createFile('status.json');
+        let statusFile = await dataFolderPath.createFile('status.json');
         data = { "status": "completed" };
         await statusFile.write(JSON.stringify(data), { append: false });
         console.log("Created new status file");
@@ -543,7 +533,7 @@ const getGenerationState = async () => {
 }
 
 const display_progress = async (progress) => {
-    let statusFile = await tempFolderPath.getEntry('status.json');
+    let statusFile = await dataFolderPath.getEntry('status.json');
     const data = JSON.parse(await statusFile.read());
     
     const progressElement = document.getElementById('queueButtonProgress');

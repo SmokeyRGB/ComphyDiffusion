@@ -8,7 +8,6 @@ const imaging = require("photoshop").imaging;
 const fs = require("uxp").storage.localFileSystem;
 const prompt_handeling = require('./prompt_handeling');
 const utils = require('./utils');
-
 const pngModule = require("../dist/bundle.js");
 
 // Log to verify correct structure
@@ -111,9 +110,9 @@ const loadSelection = async () => {
 const pasteLayer = async () => {
     return photoshop.core.executeAsModal(async () => {
         try {
-            const tempFolderPath = await fs.getTemporaryFolder();
+            
             // Retrieve the temporary file (creating or overwriting it as needed)
-            const tempFile = await tempFolderPath.getEntry("temp_image_preview.png", { overwrite: true });
+            const tempFile = await dataFolderPath.getEntry("temp_image_preview.png", { overwrite: true });
             const token = fs.createSessionToken(tempFile);
             await batchPlay([
                 {
@@ -271,9 +270,8 @@ const renameLayer = async (layername) => {
 const runStampRemove = async () => {
     return photoshop.core.executeAsModal(async () => {
         try {
-            const tempFolder = await fs.getTemporaryFolder();
-            const tempFileAlpha = await tempFolder.createFile("temp_image_inpaint.png", { overwrite: true });
-            const tempFileRGB = await tempFolder.createFile("temp_image_rgb.png", { overwrite: true });
+            const tempFileAlpha = await dataFolderPath.createFile("temp_image_inpaint.png", { overwrite: true });
+            const tempFileRGB = await dataFolderPath.createFile("temp_image_rgb.png", { overwrite: true });
             console.log("Temporary files created for inpaint and RGB images.");
             const token = fs.createSessionToken(tempFileAlpha);
             const rgbtoken = fs.createSessionToken(tempFileRGB);
@@ -410,9 +408,9 @@ const addNoiseLayer = async () => {
 };
 
 /* Insert current generated image as... */
-const insertAsLayer = async (insertAs, tempFolderPath) => {
+const insertAsLayer = async (insertAs, dataFolderPath) => {
     //console.log((insertToClipboard ? "Copying to Clipboard: " : "Inserting as Layer: ") + insertAs);
-    let prompt = await prompt_handeling.loadPrompt(tempFolderPath);
+    let prompt = await prompt_handeling.loadPrompt(dataFolderPath);
     let hadSelection = await utils.selectionActive();
 
     let layerName = prompt['seed'] + "~" + prompt['positive'] + "~" + prompt['negative'] + "~" + prompt['steps'] + "~" + prompt['cfg'];
@@ -917,9 +915,8 @@ const encodeToJPEG = async (rgbaData) => {
 const encodeAndSaveJPEG = async (rgbaData, filePath) => {
     try {
         const jpegData = await encodeToJPEG(rgbaData);
-        const folder = await fs.getTemporaryFolder();
         console.log("Saving JPEG to:", filePath);
-        const file = await folder.createFile(filePath, { overwrite: true });
+        const file = await dataFolderPath.createFile(filePath, { overwrite: true });
         await file.write(jpegData, { append: false });
         console.log("JPEG saved: " + file.nativePath);
     } catch (error) {
@@ -949,9 +946,8 @@ const encodeAndSavePNG = async (rgbaBuffer, width, height, filePath) => {
         const uxp = require("uxp").storage.localFileSystem;
 
         // Create PNG file in the designated folder
-        const folder = await fs.getTemporaryFolder()
-        console.log("Saving PNG to:", folder.nativePath);
-        const saveFile = await fs.createEntryWithUrl(folder.nativePath + "/"+filePath, { overwrite: true });
+        console.log("Saving PNG to:", dataFolderPath.nativePath);
+        const saveFile = await fs.createEntryWithUrl(dataFolderPath.nativePath + "/"+filePath, { overwrite: true });
 
         // Write the encoded PNG data to the file
         await saveFile.write(pngData, { append: false });
@@ -974,8 +970,7 @@ const encodeAndSavePNG = async (rgbaBuffer, width, height, filePath) => {
  */
 const fastSavePng = async (rgbaBuffer, width, height, filePath) => {
     try {
-        const saveFolder = await fs.getTemporaryFolder();
-        const saveFile = await saveFolder.createFile(filePath, { overwrite: true });
+        const saveFile = await dataFolderPath.createFile(filePath, { overwrite: true });
         // const saveToken = fs.createSessionToken(saveFile);
         // const savePath = saveFile.nativePath;
         app.activeDocument.saveAs.png(saveFile, {compression: 6}, false);
@@ -985,7 +980,7 @@ const fastSavePng = async (rgbaBuffer, width, height, filePath) => {
 }
 
 
-const runNewExport = async (tempFolderPath) => {
+const runNewExport = async (dataFolderPath) => {
     await photoshop.core.executeAsModal(async () => {
         try {
             // 1. Get the selection mask (if any)

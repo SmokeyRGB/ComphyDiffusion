@@ -65,13 +65,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     tempFolderPath = await fs.getTemporaryFolder()
     dataFolderPath = await fs.getDataFolder();
     pluginFolderPath = await fs.getPluginFolder();
-    inpaintImagePath = tempFolderPath.nativePath + '/temp_image_inpaint.png';
+    inpaintImagePath = dataFolderPath.nativePath + '/temp_image_inpaint.png';
     workflow_path = pluginFolderPath.nativePath + '/python_server/workflows/inpaint_sdxl_fast.json';
     console.log("Temporary Folder: " + tempFolderPath.nativePath);
     console.log("Data Folder: " + dataFolderPath.nativePath);
     console.log("Plugin Folder: " + pluginFolderPath.nativePath);
 
-    await promptHandling.loadPrompt(tempFolderPath); // Load prompt first
+    await promptHandling.loadPrompt(); // Load prompt first
     await ui.updatePreview(center = true);
     //await getGenerationState();
     await websocketModule.connectComfyUIWebsocket(pluginFolderPath);
@@ -119,7 +119,7 @@ photoshop.action.addNotificationListener([{ event: "newDocument" }], () => {
 });
 
 // Make savePrompt available to seed_control.js
-window.savePrompt = () => promptHandling.savePrompt(tempFolderPath);
+window.savePrompt = () => promptHandling.savePrompt();
 
 // FUNCTIONS
 
@@ -242,7 +242,7 @@ let generationState = "idle"; // Add a state logger
 
 
 const run_queue = async () => {
-    const prompt = await promptHandling.loadPrompt(tempFolderPath);
+    const prompt = await promptHandling.loadPrompt();
     if (autoRandomizeSeed) {
         seedControl.getRandomInt();
     }
@@ -269,7 +269,7 @@ const run_queue = async () => {
                 console.log("Document has been modified. Running stamp remove.")
                 try {
                     // New export routine using Imaging API instead of batchPlay
-                    await imageActions.runNewExport(tempFolderPath);
+                    await imageActions.runNewExport(dataFolderPath);
                     
                 } catch (error) {
                     console.error("Error during export:", error);
@@ -580,12 +580,12 @@ document.getElementById("MainPanel").addEventListener('mouseleave', () => {
 
 document.getElementById("insertAsLayer").addEventListener('click', () => {
     console.log("Inserting as Layer");
-    imageActions.insertAsLayer(insertAs, tempFolderPath);
+    imageActions.insertAsLayer(insertAs, dataFolderPath);
 });
 
 document.getElementById("denoiseSlider").addEventListener('input', () => {
     document.getElementById("denoiseAmount").innerText = "Denoise: " + Math.round(document.getElementById("denoiseSlider").value * 100) + "%";
-    promptHandling.savePrompt(tempFolderPath);
+    promptHandling.savePrompt();
 });
 
 
@@ -643,14 +643,14 @@ document.getElementById("randomizeSeed").addEventListener('click', randomizeSeed
 document.getElementById("seed").addEventListener('load', randomizeSeedClick);
 
 // PROMPT WIDGETS
-document.getElementById("positivePrompt").addEventListener('input', () => promptHandling.savePrompt(tempFolderPath));
-document.getElementById("negativePrompt").addEventListener('input', () => promptHandling.savePrompt(tempFolderPath));
-document.getElementById("steps").addEventListener('input', () => promptHandling.savePrompt(tempFolderPath));
-document.getElementById("cfg").addEventListener('input', () => promptHandling.savePrompt(tempFolderPath));
+document.getElementById("positivePrompt").addEventListener('input', () => promptHandling.savePrompt());
+document.getElementById("negativePrompt").addEventListener('input', () => promptHandling.savePrompt());
+document.getElementById("steps").addEventListener('input', () => promptHandling.savePrompt());
+document.getElementById("cfg").addEventListener('input', () => promptHandling.savePrompt());
 
 // SETTINGS 
-document.getElementById("steps").addEventListener('input', () => promptHandling.savePrompt(tempFolderPath));
-document.getElementById("cfg").addEventListener('input', () => promptHandling.savePrompt(tempFolderPath));
+document.getElementById("steps").addEventListener('input', () => promptHandling.savePrompt());
+document.getElementById("cfg").addEventListener('input', () => promptHandling.savePrompt());
 
 // HIDE / SHOW ADVANCED PROMPTS
 document.getElementById("advPromptingButton").addEventListener('click', ui.hideAdvPrompts);
@@ -685,27 +685,27 @@ document.getElementById("promptInfoCopyCfgButton").addEventListener('click', fun
 document.getElementById("promptInfoRecyclePositiveButton").addEventListener('click', function (event) {
     let value = document.getElementById('posPromptInfo').value;
     document.getElementById("positivePrompt").value = value
-    promptHandling.savePrompt(tempFolderPath);
+    promptHandling.savePrompt();
 });
 document.getElementById("promptInfoRecycleNegativeButton").addEventListener('click', function (event) {
     let value = document.getElementById('negPromptInfo').value;
     document.getElementById("negativePrompt").value = value
-    promptHandling.savePrompt(tempFolderPath);
+    promptHandling.savePrompt();
 });
 document.getElementById("promptInfoRecycleSeedButton").addEventListener('click', function (event) {
     let value = document.getElementById('seedPromptInfo').value;
     document.getElementById("seed").value = value
-    promptHandling.savePrompt(tempFolderPath);
+    promptHandling.savePrompt();
 });
 document.getElementById("promptInfoRecycleStepsButton").addEventListener('click', function (event) {
     let value = document.getElementById('stepsPromptInfo').value;
     document.getElementById("steps").value = value
-    promptHandling.savePrompt(tempFolderPath);
+    promptHandling.savePrompt();
 });
 document.getElementById("promptInfoRecycleCfgButton").addEventListener('click', function (event) {
     let value = document.getElementById('cfgPromptInfo').value;
     document.getElementById("cfg").value = value
-    promptHandling.savePrompt(tempFolderPath);
+    promptHandling.savePrompt();
 });
 
 document.getElementById("useAllExtractedPromptInfo").addEventListener('click', function (event) {
@@ -721,6 +721,6 @@ document.getElementById("useAllExtractedPromptInfo").addEventListener('click', f
     document.getElementById("steps").value = steps
     document.getElementById("cfg").value = cfg
 
-    promptHandling.savePrompt(tempFolderPath);
+    promptHandling.savePrompt();
 });
 

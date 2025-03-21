@@ -1,8 +1,9 @@
 const { localFileSystem: fs } = require('uxp').storage;
 
-async function readPromptFile(tempFolderPath) {
+
+async function readPromptFile() {
     try {
-        let promptFile = await tempFolderPath.getEntry('prompt.json');
+        let promptFile = await dataFolderPath.getEntry('prompt.json');
         let data = await promptFile.read();
         try {
             data = JSON.parse(data);
@@ -19,7 +20,7 @@ async function readPromptFile(tempFolderPath) {
         return promptFile;
     } catch (e) {
         console.log("Error whilst loading prompt File: " + e);
-        let promptFile = await tempFolderPath.createFile('prompt.json');
+        let promptFile = await dataFolderPath.createFile('prompt.json');
         let data = {
             "positive": "",
             "negative": "bad quality, worst quality, blurry",
@@ -33,7 +34,7 @@ async function readPromptFile(tempFolderPath) {
     }
 }
 
-async function savePrompt(tempFolderPath) {
+async function savePrompt() {
     const positive_prompt = document.getElementById('positivePrompt').value;
     const negative_prompt = document.getElementById('negativePrompt').value;
     const seed = document.getElementById('seed').value;
@@ -51,7 +52,7 @@ async function savePrompt(tempFolderPath) {
     console.log('Got prompt from UI Input: \nPositive: ' + positive_prompt + '\nNegative: ' + negative_prompt + '\nSeed: ' + seed);
 
     try {
-        const promptFile = await readPromptFile(tempFolderPath);
+        const promptFile = await readPromptFile();
         let prompt = {
             'positive': positive_prompt,
             'negative': negative_prompt,
@@ -68,9 +69,9 @@ async function savePrompt(tempFolderPath) {
     }
 }
 
-async function loadPrompt(tempFolderPath) {
+async function loadPrompt() {
     try {
-        const promptFile = await readPromptFile(tempFolderPath);
+        const promptFile = await readPromptFile();
         let prompt = JSON.parse(await promptFile.read());
         console.log('Prompt loaded: ' + JSON.stringify(prompt));
         document.getElementById('positivePrompt').value = prompt['positive'];
