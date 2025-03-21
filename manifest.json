@@ -16,9 +16,6 @@
       "id": "showAlert",
       "label": "Show alert"
     },
-
-
-
     {
       "type": "panel",
       "id": "vanilla",
@@ -137,6 +134,64 @@
       }
     },
 
+    {
+      "type": "panel",
+      "id": "comfyuiWebview",
+      "minimumSize": {
+        "width": 430,
+        "height": 220
+      },
+      "maximumSize": {
+        "width": 1920,
+        "height": 1080
+      },
+      "preferredDockedSize": {
+        "width": 460,
+        "height": 250
+      },
+      "preferredFloatingSize": {
+        "width": 960,
+        "height": 540
+      },
+      "icons": [
+        {
+          "width": 32,
+          "height": 32,
+          "path": "icons/icon_D.png",
+          "scale": [
+            1,
+            2
+          ],
+          "theme": [
+            "dark",
+            "darkest"
+          ],
+          "species": [
+            "generic"
+          ]
+        },
+        {
+          "width": 32,
+          "height": 32,
+          "path": "icons/icon_N.png",
+          "scale": [
+            1,
+            2
+          ],
+          "theme": [
+            "lightest",
+            "light"
+          ],
+          "species": [
+            "generic"
+          ]
+        }
+      ],
+      "label": {
+        "default": "Workflow Editor"
+      }
+    },
+
 
     {
       "type": "panel",
@@ -236,8 +291,16 @@
         ""
       ]
     },
+    "webview": {
+      "allow": "yes",
+      "domains": ["http://127.0.0.1:8888"],
+      "enabeleMessageBridge": "localAndRemote"
+    },
     "network": {
       "domains": "all"
     }
+  },
+  "featureFlags": {
+    "enableAlerts": true
   }
 }

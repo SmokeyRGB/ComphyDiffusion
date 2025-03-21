@@ -12,6 +12,7 @@ const imageActions = require('./js/image_actions.js');
 const promptHandling = require('./js/prompt_handeling.js');
 const websocketModule = require('./js/websocket.js'); // Import websocket module
 const utils = require('./js/utils.js'); // Import utils module
+const comfyuiWebview = require('./js/webview.js'); // Import comfyuiWebview module
 
 // Import animatePanel from the gsap webpack bundle
 const bundle = require('./dist/bundle.js');
@@ -29,7 +30,7 @@ let tempFolderPath;
 let dataFolderPath;
 let pluginFolderPath;
 
-let workflow_path;
+let workflow_path = "";
 let inpaintImagePath
 
 let advancedPrompting = false;
@@ -77,6 +78,13 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     console.log("Done.")
 }, false);
+
+// ON UNLOAD: CLEANUP
+photoshop.action.addNotificationListener([{ event: "close" }], (eventName, descriptor) => {
+    console.log("Document closed. Cleaning up.")
+    utils.pluginCleanup();
+    console.log("Cleaned up.")
+});
 
 // NEW: Listen for document change events and set the global flag.
 photoshop.action.addNotificationListener([
@@ -206,6 +214,27 @@ const pickWorkflow = async () => {
     });
 }
 
+
+
+document.getElementById("pickWorkflow").addEventListener('click', () => {
+    pickWorkflow();
+});
+
+document.getElementById("settingsButton").addEventListener('click', () => {
+    document.getElementById("settingsDialog").setAttribute('open');
+});
+document.getElementById("hideSettings").addEventListener('click', () => {
+    document.getElementById("settingsDialog").removeAttribute('open');
+});
+
+ // Example of external control: listen for a custom event to toggle the panel
+ // Other parts of your plugin can dispatch the event to show or hide this panel.
+//  document.getElementById("pickWorkflow").addEventListener('click', function (event) {
+//         comfyuiWebview.togglePanel();
+// });
+
+
+
 // UI MANIPULATION
 
 let generationState = "idle"; // Add a state logger
@@ -225,6 +254,10 @@ const run_queue = async () => {
 
     if (await utils.selectionActive() || autoQueue) {
         try {
+            if (workflow_path == "") {
+                document.getElementById('queueButton').innerHTML = "Pick Workflow!";
+                return; 
+            }
             if (await utils.selectionActive()){
                 await imageActions.saveSelection();
                 console.log("Selection saved.")
@@ -439,6 +472,24 @@ entrypoints.setup({
             ]
         },
 
+        comfyuiWebview: {
+            show(body) {
+                let content = document.getElementById('comfyuiWebView')
+                body.appendChild(content)
+            },
+            invokeMenu(id) {
+                switch (id) {
+                    case "placeholder":
+                        console.log("Placeholder clicked")
+                        break;
+                }
+            },
+            menuItems: [
+                { id: "placeholder", label: "Placeholder" },
+
+            ]
+        },
+
         promptInfo: {
             show(body) {
                 let content = document.getElementById('promptInfoPanel')
@@ -459,6 +510,12 @@ window.require('photoshop').core.suppressResizeGripper(
     {
         "type": "panel",
         "target": "vanilla",
+        "value": true
+    })
+window.require('photoshop').core.suppressResizeGripper(
+    {
+        "type": "panel",
+        "target": "comfyuiWebview",
         "value": true
     })
 window.require('photoshop').core.suppressResizeGripper(
@@ -511,17 +568,24 @@ const autoQueueCheck = async () => {
 document.getElementById("MainPanel").addEventListener('mouseenter', () => {
     //gsap.to(document.getElementById("insertionOptions"), { opacity: 1, duration: 0.25 });
     animatePanel(document.getElementById("insertionOptions"), "top", -50, -5, 300)
+    animatePanel(document.getElementById("lowerThird"), "bottom", -50, -10, 300)
 }
 )
 
 document.getElementById("MainPanel").addEventListener('mouseleave', () => {
     animatePanel(document.getElementById("insertionOptions"), "top", -5, -50, 300)
+    animatePanel(document.getElementById("lowerThird"), "bottom", -10, -50, 300)
 }
 )
 
 document.getElementById("insertAsLayer").addEventListener('click', () => {
     console.log("Inserting as Layer");
     imageActions.insertAsLayer(insertAs, tempFolderPath);
+});
+
+document.getElementById("denoiseSlider").addEventListener('input', () => {
+    document.getElementById("denoiseAmount").innerText = "Denoise: " + Math.round(document.getElementById("denoiseSlider").value * 100) + "%";
+    promptHandling.savePrompt(tempFolderPath);
 });
 
 
@@ -546,9 +610,7 @@ document.getElementById("insertSettings").addEventListener("change", evt => {
     }
 })
 
-document.getElementById("pickWorkflow").addEventListener('click', () => {
-    pickWorkflow();
-});
+
 
 // PREVIEW SIZE SLIDER
 //document.getElementById("previewSizeSlider").addEventListener('input', ui.changePreviewSize)
@@ -627,7 +689,7 @@ document.getElementById("promptInfoRecyclePositiveButton").addEventListener('cli
 });
 document.getElementById("promptInfoRecycleNegativeButton").addEventListener('click', function (event) {
     let value = document.getElementById('negPromptInfo').value;
-    document.getElementById("negative").value = value
+    document.getElementById("negativePrompt").value = value
     promptHandling.savePrompt(tempFolderPath);
 });
 document.getElementById("promptInfoRecycleSeedButton").addEventListener('click', function (event) {

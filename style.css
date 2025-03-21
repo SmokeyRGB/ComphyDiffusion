@@ -181,32 +181,6 @@ body {
     z-index: 9;
 }
 
-#lowerThird {    
-    position: fixed; /* Change to fixed */
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: auto; /* Let it size to content */
-    background: linear-gradient(0deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 68%, rgba(0,0,0,0) 100%);
-    padding: 5px 5px 10px; /* Added top padding to account for overlapping button */
-    box-sizing: border-box;
-    
-    /* Flex settings for child elements */
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: center;
-
-    /* Max height with scrolling if needed */
-    max-height: 50vh;
-    overflow-y: auto;
-    
-    /* Prevent any unwanted margin/spacing */
-    margin: 0;
-    z-index: 9;
-}
-
 #queueButtonContainer {
     z-index: 999; /* Increase z-index to appear above promptOverlay */
     position: relative;
@@ -237,6 +211,59 @@ body {
     padding-bottom: 10px;
 }
 
+.lowerThird {
+    position: fixed;
+    bottom: -50px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 60px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 68%, rgba(0,0,0,0) 100%);
+    padding: 5px 5px 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    max-height: 50vh;
+    overflow-y: auto;
+    margin: 0;
+    z-index: 9;
+}
+
+.settingsContainer {
+    margin: auto;
+    size: ledger;
+    position: fixed;
+    width: 91%;
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    overflow-y: auto;
+    margin: 0;
+    z-index: 9;
+}
+
+#settings {
+    background: rgba(35,35,35,0.9);
+    border: 2px solid #1473e6;
+    width: 95%;
+    margin: auto 0px;
+    border-radius: 10px;
+    min-height: 150px;
+}
+
+.settingsCard {
+    border-radius: 10px;
+    border: 1px solid #5f5f5f; 
+    padding: 10px; 
+    padding-top: 5px;
+    margin: 5px;
+}
+
     /* Other prompt option styling */
 .prompt-option {
     display: contents;
@@ -249,3 +276,20 @@ body {
 #negativePrompt, #steps, #cfg {
     transition: opacity 0.0s ease;
 }
+
+/* Basic styles for the panel */
+#comfyuiWebViewBody {
+    margin: 0;
+    height: 100%;
+    background-color: #000;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Style for the webview */
+#comfyuiWebView{
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+  
