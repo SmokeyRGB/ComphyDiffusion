@@ -65,6 +65,7 @@ def run_comfyui(input_image_path, prompt_data, client_ws, workflow_path, loop):
     """
     images = []
     workflow = load_workflow(workflow_path)
+    denoise = prompt_data.get("denoise", 1.0)
     
     async def inner():
         async for image in prompt_image_to_image(
@@ -107,53 +108,60 @@ async def handler(websocket, path=None):
                 return
 
             if data.get("command") == "image_to_image":
-                # Ensure "type" parameter is valid; default to "input"
-                if "type" not in data or data["type"] not in ["input", "temp", "output"]:
-                    data["type"] = "input"
+                try:
+                    # Ensure "type" parameter is valid; default to "input"
+                    if "type" not in data or data["type"] not in ["input", "temp", "output"]:
+                        data["type"] = "input"
 
-                # Before starting a new generation, make sure preview events are enabled.
-                event_handler.suppress_next = False
 
-                prompt_path = os.path.join(PLUGIN_DATA_DIR, "prompt.json")
-                with open(prompt_path, 'r') as f:
-                    prompt_data = json.load(f)
-                print("Prompt data:", prompt_data)
+                    # Before starting a new generation, make sure preview events are enabled.
+                    event_handler.suppress_next = False
 
-                input_image_path = data.get("input_path")
-                if not os.path.exists(input_image_path):
-                    await websocket.send(json.dumps({"status": "error", "message": "Input image not found"}))
-                    return
-                
-                workflow_path = data.get("workflow_path")
+                    prompt_path = os.path.join(PLUGIN_DATA_DIR, "prompt.json")
+                    with open(prompt_path, 'r') as f:
+                        prompt_data = json.load(f)
+                    print("Prompt data:", prompt_data)
 
-                os.makedirs(OUTPUT_DIR, exist_ok=True)
-                print("Loading input image from path:", input_image_path)
+                    input_image_path = data.get("input_path")
+                    if not os.path.exists(input_image_path):
+                        await websocket.send(json.dumps({"status": "error", "message": "Input image not found"}))
+                        return
+                    
+                    workflow_path = data.get("workflow_path")
+                    if workflow_path is None or not os.path.exists(workflow_path):
+                        await websocket.send(json.dumps({"status": "error", "message": "Workflow not found"}))
 
-                # Offload the heavy ComfyUI processing to a separate thread.
-                images = await asyncio.to_thread(
-                    run_comfyui, 
-                    input_image_path, 
-                    prompt_data,
-                    websocket,
-                    workflow_path,
-                    loop  # Pass the loop through
-                )
+                    os.makedirs(OUTPUT_DIR, exist_ok=True)
+                    print("Loading input image from path:", input_image_path)
 
-                # Once generation is done, set the flag to skip the final duplicate event.
-                event_handler.suppress_next = True
+                    # Offload the heavy ComfyUI processing to a separate thread.
+                    images = await asyncio.to_thread(
+                        run_comfyui, 
+                        input_image_path, 
+                        prompt_data,
+                        websocket,
+                        workflow_path,
+                        loop  # Pass the loop through
+                    )
 
-                # status_update = {"status": "completed"}
-                # status_path = os.path.join(PLUGIN_DATA_DIR, "status.json")
-                # with open(status_path, 'w') as f:
-                #     json.dump(status_update, f)
-                if len(images) == 0:
-                    await websocket.send(json.dumps({"status": "cancelled", "reason":"completed", "message": "Inference completed but no images generated. Probably aborted?"}))
-                else:
-                    await websocket.send(json.dumps({
-                        "status": "success",
-                        "message": "Image generation completed",
-                        "images": images
-                    }))
+                    # Once generation is done, set the flag to skip the final duplicate event.
+                    event_handler.suppress_next = True
+
+                    # status_update = {"status": "completed"}
+                    # status_path = os.path.join(PLUGIN_DATA_DIR, "status.json")
+                    # with open(status_path, 'w') as f:
+                    #     json.dump(status_update, f)
+                    if len(images) == 0:
+                        await websocket.send(json.dumps({"status": "cancelled", "reason":"completed", "message": "Inference completed but no images generated. Probably aborted?"}))
+                    else:
+                        await websocket.send(json.dumps({
+                            "status": "success",
+                            "message": "Image generation completed",
+                            "images": images
+                        }))
+                except Exception as e:
+                    print(f"Error during image generation: {e}")
+                    await websocket.send(json.dumps({"status": "error", "message": "Error during image generation"}))
 
             elif data.get("command") == "cancel":
                 # Handle the cancel command
