@@ -14,8 +14,10 @@ python_server/output/
 # js files
 node_modules/
 .env
-dist/
 *.log
+
+# webpack files
+src/*
 
 # python files
 python_server/venv/
@@ -25,3 +27,4 @@ python_server/__pycache__/
 *.pyo
 .DS_Store
 .env
+
