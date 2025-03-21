@@ -1,5 +1,12 @@
 const photoshop = require("photoshop");
 const app = photoshop.app;
+const websocketModule = require("./websocket");
+
+const pluginCleanup = async () => { 
+    console.log("Cleaning up plugin resources.")
+    // TODO: Restore ComfyUI default graph
+    //await websocketModule.closeWebsocket();
+}
 
 async function copyToClipboard(text) {
     try {
@@ -65,6 +72,7 @@ const selectionActive = async () => {
 }
 
 module.exports = {
+    pluginCleanup,
     copyToClipboard,
     getActiveSelection,
     selectionActive,
