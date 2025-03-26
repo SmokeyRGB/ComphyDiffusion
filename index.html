@@ -149,6 +149,7 @@
     <sp-dialog dismissable id="settingsDialog">
       <sp-card style="border-radius: 10px;background: #282828; border: 1px solid #5f5f5f; padding: 20px; padding-top: 5px">
         <sp-heading size="s" slot="title">Settings</sp-heading>
+        <sp-detail>ComphyPhotoshop 2.1 by <a href="https://ko-fi.com/smokeyrgb">SmokeyRGB</a></sp-detail>
         <sp-divider style="margin :5px"></sp-divider>
         <sp-body slot="description">
           <div>
@@ -171,8 +172,8 @@
                 <sp-action-button slot="trigger" id="connectPythonWebsocketButton" style="height: 25px">
                   Connect
                 </sp-action-button>
-                <sp-textfield placeholder="127.0.0.1:6789" size="s"></sp-textfield>
-                <sp-label id="comfyUIFolderPath" style="margin-left: 10px; font-size: 12px; color: #c71111;">🔴</sp-label>
+                <sp-textfield id="connectPythonWebsocketURL" placeholder="127.0.0.1:6789" size="s"></sp-textfield>
+                <sp-label id="connectPythonWebsocketLamp" style="margin-left: 10px; font-size: 12px; color: #c71111;">🔴</sp-label>
               </div>
             </sp-card>
           </div>  

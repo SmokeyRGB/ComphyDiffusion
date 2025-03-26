@@ -2,18 +2,48 @@ const photoshop = require("photoshop");
 const app = photoshop.app;
 const websocketModule = require("./websocket");
 
+const DEFAULT_SETTINGS = {
+    comfyUIPath: '',
+    websocketUrl: 'ws://127.0.0.1:6789',
+    insertAs: 'whole',
+};
+
+
+
 const pluginCleanup = async () => { 
     console.log("Cleaning up plugin resources.")
     // TODO: Restore ComfyUI default graph
     //await websocketModule.closeWebsocket();
 }
 
-async function copyToClipboard(text) {
+const loadSettings = async () => {
     try {
-        await navigator.clipboard.write({ 'text/plain': text });
-        console.log("Copied to clipboard:", text);
+        const settingsFilePath = dataFolderPath.nativePath + '\\' + 'pluginSettings.json';
+        console.log('Loading settings from:', settingsFilePath);
+        const settingsFile = await fs.getEntryWithUrl(settingsFilePath);
+        const settingsData = await settingsFile.read();
+        const settings = settingsData ? JSON.parse(settingsData) : {};
+        return {...DEFAULT_SETTINGS, ...settings};
     } catch (error) {
-        console.error("Clipboard error:", error);
+        console.error('Error loading settings:', error);
+        return DEFAULT_SETTINGS;
+    }
+}
+
+const saveSettings = async (updates) => {
+    try {
+        // Load current settings
+        const currentSettings = await loadSettings();
+        
+        // Merge updates with current settings
+        const mergedSettings = {...currentSettings, ...updates};
+        
+        // Save merged settings
+        const settingsFile = await dataFolderPath.createFile('pluginSettings.json', { overwrite: true });
+        await settingsFile.write(JSON.stringify(mergedSettings));
+        console.log('Settings updated:', mergedSettings);
+    } catch (error) {
+        console.error('Error saving settings:', error);
     }
 }
 
@@ -73,7 +103,8 @@ const selectionActive = async () => {
 
 module.exports = {
     pluginCleanup,
-    copyToClipboard,
+    loadSettings,
+    saveSettings,
     getActiveSelection,
     selectionActive,
     closeDoc,

@@ -62,6 +62,7 @@ let documentChanged = false;
 document.addEventListener('DOMContentLoaded', async function () {
     console.log("DOM Loaded. Initializing...")
 
+
     tempFolderPath = await fs.getTemporaryFolder()
     dataFolderPath = await fs.getDataFolder();
     pluginFolderPath = await fs.getPluginFolder();
@@ -75,6 +76,19 @@ document.addEventListener('DOMContentLoaded', async function () {
     await ui.updatePreview(center = true);
     //await getGenerationState();
     await websocketModule.connectComfyUIWebsocket(pluginFolderPath);
+
+    // Load and display saved settings
+    const settings = await utils.loadSettings();
+    websocket_url = settings.websocketUrl;
+    insertAs = settings.insertAs;
+    document.getElementById("insertSettings").selectedIndex = settings.insertAs === 'whole' ? 0 : settings.insertAs === 'onlyChanges' ? 1 : settings.insertAs === 'maskedLayer' ? 2 : 3;
+
+    document.getElementById('comfyUIFolderPath').textContent =
+        settings.comfyUIPath || 'No folder selected';
+    document.getElementById('comfyUIFolderPath').style.color =
+        settings.comfyUIPath ? '#11c711' : '#c71111';
+
+    document.getElementById("websocketUrl").value = websocket_url;
 
     console.log("Done.")
 }, false);
@@ -95,7 +109,8 @@ photoshop.action.addNotificationListener([
     { event: "copyToLayer" },
     { event: "delete" },
     { event: "make" },
-    { event: "move" }
+    { event: "move" },
+    { event: "newDoc" },
 ], (eventName, descriptor) => {
     documentChanged = true;
 });
@@ -220,12 +235,48 @@ document.getElementById("pickWorkflow").addEventListener('click', () => {
     pickWorkflow();
 });
 
+// SETTINGS EVENTS
+
 document.getElementById("settingsButton").addEventListener('click', () => {
     document.getElementById("settingsDialog").setAttribute('open');
 });
 document.getElementById("hideSettings").addEventListener('click', () => {
     document.getElementById("settingsDialog").removeAttribute('open');
 });
+
+// ComfyUI Folder Selection
+document.getElementById("selectComfyUIFolderButton").addEventListener('click', async () => {
+    try {
+        const folder = await fs.getFolder();
+        if (folder) {
+            settings.comfyUIPath = folder.nativePath;
+            await utils.saveSettings({comfyUIPath: folder.nativePath});
+            document.getElementById('comfyUIFolderPath').textContent = folder.nativePath;
+            document.getElementById('comfyUIFolderPath').style.color = '#11c711';
+        }
+    } catch (error) {
+        console.error('Error selecting ComfyUI folder:', error);
+        document.getElementById('comfyUIFolderPath').textContent = 'Error: ' + error.message;
+        document.getElementById('comfyUIFolderPath').style.color = '#c71111';
+    }
+});
+
+// WebSocket URL
+document.getElementById("connectPythonWebsocketURL").addEventListener('input', (event) => {
+    websocket_url = event.target.value;
+    console.log("WebSocket URL changed to: " + websocket_url);
+}
+);
+document.getElementById("connectPythonWebsocketButton").addEventListener('click', async () => {
+    settings.websocketUrl = websocket_url;
+    await utils.saveSettings({websocketUrl: websocket_url});
+    console.log("WebSocket URL saved: " + websocket_url);
+    websocketModule.connectComfyUIWebsocket(pluginFolderPath);
+}
+);
+
+
+
 
  // Example of external control: listen for a custom event to toggle the panel
  // Other parts of your plugin can dispatch the event to show or hide this panel.
@@ -595,12 +646,15 @@ document.getElementById("insertSettings").addEventListener("change", evt => {
     switch (index) {
         case 0:
             insertAs = 'whole'
+            utils.saveSettings({ insertAs: 'whole' });
             break
         case 1:
             insertAs = 'onlyChanges'
+            utils.saveSettings({ insertAs: 'onlyChanges' });
             break
         case 2:
             insertAs = 'maskedLayer'
+            utils.saveSettings({ insertAs: 'maskedLayer' });
             break
         case 3:
             insertAs = 'clipboard'

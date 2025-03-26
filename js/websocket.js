@@ -21,10 +21,16 @@ async function connectComfyUIWebsocket(pluginFolderPath) {
 
     websocket.onopen = evt => {
         console.log("Connected to python server hook");
+        document.getElementById('connectPythonWebsocketButton').disabled = true;
+        document.getElementById('connectPythonWebsocketButton').innerHTML = "Connected";
+        document.getElementById('connectPythonWebsocketLamp').innerHTML = "🟢";
     };
 
     websocket.onclose = evt => {
         console.log("WebSocket closed. State:", evt.code, evt.reason);
+        document.getElementById('connectPythonWebsocketButton').disabled = false;
+        document.getElementById('connectPythonWebsocketButton').innerHTML = "Connect";
+        document.getElementById('connectPythonWebsocketLamp').innerHTML = "🔴";
         websocket = null;
         setTimeout(() => {
             console.log("Reconnecting to WebSocket...");
