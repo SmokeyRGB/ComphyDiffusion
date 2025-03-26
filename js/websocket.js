@@ -6,7 +6,6 @@ const ui = require("./ui");
 const utils = require("./utils");
 
 let websocket = null;
-const websocket_url = 'ws://127.0.0.1:6789';
 let reconnectInterval = 5000; // 5 seconds
 
 async function connectComfyUIWebsocket(pluginFolderPath) {
@@ -52,13 +51,18 @@ async function connectComfyUIWebsocket(pluginFolderPath) {
     websocket.onmessage = handleWebsocketMessage;
 }
 
-// Add a helper to convert Uint8Array to base64 string
+// Convert Uint8Array to base64 string (memory-efficient for large arrays)
 function uint8ToBase64(uint8Array) {
-    let binary = '';
-    for (let i = 0; i < uint8Array.length; i++) {
-        binary += String.fromCharCode(uint8Array[i]);
+    try {
+        let binary = '';
+        for (let i = 0; i < uint8Array.length; i++) {
+            binary += String.fromCharCode(uint8Array[i]);
+        }
+        return btoa(binary);
+    } catch (e) {
+        console.error('Error converting Uint8Array to base64:', e);
+        return '';
     }
-    return btoa(binary);
 }
 
 async function handleWebsocketMessage(evt) {

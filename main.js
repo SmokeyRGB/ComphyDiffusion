@@ -31,19 +31,13 @@ let dataFolderPath;
 let pluginFolderPath;
 
 let workflow_path = "";
-let inpaintImagePath
-
 let advancedPrompting = false;
-
 let genCompleted = true;
-
 let autoQueue = false;
-const autoQueueDelay = 3000;
 let autoRandomizeSeed = false;
-
-let updateLivePreview = true;
-let animation_state = 0;
 let qButtonHoverState = false;
+let animation_state = 0;
+let updateLivePreview = true;
 
 let insertAs = 'whole';
 let insertToClipboard = false;
@@ -55,8 +49,6 @@ let cancelInProgress = false;
 
 // NEW: Global document change flag
 let documentChanged = false;
-
-//const client = new ComfyUIClient(serverAddress, clientId);
 
 //ONLOAD STUFF
 document.addEventListener('DOMContentLoaded', async function () {
@@ -74,7 +66,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     await promptHandling.loadPrompt(); // Load prompt first
     await ui.updatePreview(center = true);
-    //await getGenerationState();
     await websocketModule.connectComfyUIWebsocket(pluginFolderPath);
 
     // Load and display saved settings
@@ -278,11 +269,6 @@ document.getElementById("connectPythonWebsocketButton").addEventListener('click'
 
 
 
- // Example of external control: listen for a custom event to toggle the panel
- // Other parts of your plugin can dispatch the event to show or hide this panel.
-//  document.getElementById("pickWorkflow").addEventListener('click', function (event) {
-//         comfyuiWebview.togglePanel();
-// });
 
 
 
@@ -362,34 +348,16 @@ const run_queue = async () => {
 };
 
 const cancel_queue = async () => {
-    if (generationState === "running") {
-        if (websocketModule.getWebsocket() && websocketModule.getWebsocket().readyState === WebSocket.OPEN) {
-            console.log("Canceling");
-            websocketModule.sendCancelCommand();
-        } else {
-            console.log("Error Canceling: Python Server not connected yet. Connect first");
-        }
-    } else {
-        console.log("No generation running.");
-        if (websocketModule.getWebsocket() && websocketModule.getWebsocket().readyState === WebSocket.OPEN) {
-            console.log("Canceling");
-            websocketModule.sendCancelCommand();
-        } else {
-            console.log("Error Canceling: Python Server not connected yet. Connect first");
-        }
+    if (!websocketModule.getWebsocket() || websocketModule.getWebsocket().readyState !== WebSocket.OPEN) {
+        console.log("Error Canceling: Python Server not connected yet. Connect first");
+        return;
     }
+
+    console.log("Canceling");
+    websocketModule.sendCancelCommand();
 }
 
 //####### EVENT TRIGGERS ########
-
-// DOCUMENT
-
-photoshop.action.addNotificationListener([{
-    event: "newDocument"
-}], () => {
-    console.log("New document opened. Creating temporary selection channel.")
-    imageActions.createSelectionChannel();
-});
 
 
 // QUEUE
@@ -607,17 +575,12 @@ const autoQueueCheck = async () => {
     }
 }
 
-// const autoQueueInterval = setInterval(() => {
-//     photoshop.core.executeAsModal(async () => {
-//         await autoQueueCheck().catch(console.error); })
-// }, autoQueueDelay);
 
 // GENERATION PREVIEW HANDELING /////////////////
 
 // INSERT PREVIEW HANDELING
 
 document.getElementById("MainPanel").addEventListener('mouseenter', () => {
-    //gsap.to(document.getElementById("insertionOptions"), { opacity: 1, duration: 0.25 });
     animatePanel(document.getElementById("insertionOptions"), "top", -50, -5, 300)
     animatePanel(document.getElementById("lowerThird"), "bottom", -50, -10, 300)
 }
@@ -667,9 +630,6 @@ document.getElementById("insertSettings").addEventListener("change", evt => {
 
 
 // PREVIEW SIZE SLIDER
-//document.getElementById("previewSizeSlider").addEventListener('input', ui.changePreviewSize)
-
-// Remove old zoom preview code since we're using the new zoom implementation
 
 // PROMPT HANDELING ///////////////////////////////
 
