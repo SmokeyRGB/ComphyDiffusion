@@ -72,6 +72,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const settings = await utils.loadSettings();
     websocket_url = settings.websocketUrl;
     insertAs = settings.insertAs;
+    await pickWorkflow(settings.workflowPath);
+
     document.getElementById("insertSettings").selectedIndex = settings.insertAs === 'whole' ? 0 : settings.insertAs === 'onlyChanges' ? 1 : settings.insertAs === 'maskedLayer' ? 2 : 3;
 
     document.getElementById('comfyUIFolderPath').textContent =
@@ -209,15 +211,24 @@ const getEmbeddedPrompt = async () => {
     return prompt
 }
 
-const pickWorkflow = async () => {
-    fs.getFileForOpening({ types: ["json"] }).then(file => {
-        workflow_path = file.nativePath;
-        if (workflow_path != undefined) {
-            console.log("Workflow selected: " + workflow_path);
-            document.getElementById("pickWorkflow").style.stroke = "#177fff";
-            document.getElementById("workflowName").innerText = workflow_path.replace(/^.*[\\\/]/, '');
-        }
-    });
+const pickWorkflow = async (override_path = undefined) => {
+    if (override_path != undefined && override_path != "") {
+        workflow_path = override_path;
+        document.getElementById("workflowName").innerText = workflow_path.replace(/^.*[\\\/]/, '');
+        document.getElementById("pickWorkflow").style.stroke = "#177fff";
+        return;
+    }
+    else {
+        fs.getFileForOpening({ types: ["json"] }).then(file => {
+            workflow_path = file.nativePath;
+            if (workflow_path != undefined) {
+                console.log("Workflow selected: " + workflow_path);
+                document.getElementById("pickWorkflow").style.stroke = "#177fff";
+                document.getElementById("workflowName").innerText = workflow_path.replace(/^.*[\\\/]/, '');
+                utils.saveSettings({ workflowPath: workflow_path });
+            }
+        });
+    }
 }
 
 
@@ -571,7 +582,7 @@ const autoQueueCheck = async () => {
         await run_queue();
     }
     else if (autoQueue && generationState === "running") {
-            await cancel_queue().then(() => run_queue());
+            cancel_queue().then(() => run_queue());
     }
 }
 

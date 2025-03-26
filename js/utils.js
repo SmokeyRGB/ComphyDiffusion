@@ -5,6 +5,7 @@ const websocketModule = require("./websocket");
 const DEFAULT_SETTINGS = {
     comfyUIPath: '',
     websocketUrl: 'ws://127.0.0.1:6789',
+    workflowPath: '',
     insertAs: 'whole',
 };
 
