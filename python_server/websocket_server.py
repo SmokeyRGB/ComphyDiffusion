@@ -10,7 +10,7 @@ from comfyui_api.api.websocket_api import interupt_prompt
 from asyncio import Queue
 import time
 
-PLUGIN_DATA_DIR = r"C:\Users\Sammy\AppData\Local\Temp\Adobe\UXP\PluginsStorage\PHSP\26\Developer\Photoshop-ComfyUI_v2\PluginData"
+PLUGIN_DATA_DIR = r"C:\Users\Sammy\AppData\Roaming\Adobe\UXP\PluginsStorage\PHSP\26\Developer\Photoshop-ComfyUI_v2\PluginData"
 OUTPUT_DIR = r"C:\Users\Sammy\AppData\Local\Temp\Adobe\UXP\PluginsStorage\PHSP\26\Developer\Photoshop-ComfyUI_v2\Output"
 PREVIEW_DIR = r"C:\Users\Sammy\AppData\Local\Temp\Adobe\UXP\PluginsStorage\PHSP\26\Developer\Photoshop-ComfyUI_v2\Previews"
 COMFYUI_SERVER_ADDRESS = "127.0.0.1:8888"  # newly added constant
