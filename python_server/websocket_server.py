@@ -10,9 +10,8 @@ from comfyui_api.api.websocket_api import interupt_prompt
 from asyncio import Queue
 import time
 
-PLUGIN_DATA_DIR = r"C:\Users\Sammy\AppData\Roaming\Adobe\UXP\PluginsStorage\PHSP\26\Developer\Photoshop-ComfyUI_v2\PluginData"
-OUTPUT_DIR = r"C:\Users\Sammy\AppData\Local\Temp\Adobe\UXP\PluginsStorage\PHSP\26\Developer\Photoshop-ComfyUI_v2\Output"
-PREVIEW_DIR = r"C:\Users\Sammy\AppData\Local\Temp\Adobe\UXP\PluginsStorage\PHSP\26\Developer\Photoshop-ComfyUI_v2\Previews"
+global PLUGIN_DATA_DIR, OUTPUT_DIR, PREVIEW_DIR
+
 COMFYUI_SERVER_ADDRESS = "127.0.0.1:8888"  # newly added constant
 
 class PreviewHandler(FileSystemEventHandler):
@@ -84,23 +83,26 @@ def run_comfyui(input_image_path, prompt_data, client_ws, workflow_path, loop):
     return asyncio.run(inner())
 
 async def handler(websocket, path=None):
+    global PLUGIN_DATA_DIR, OUTPUT_DIR, PREVIEW_DIR
+
     print("WebSocket client connected")
     loop = asyncio.get_running_loop()  # Get the current event loop
     fs_preview_queue = Queue()
 
-    os.makedirs(PREVIEW_DIR, exist_ok=True)
+    # os.makedirs(PREVIEW_DIR, exist_ok=True)
     
-    # Set up the file system observer with our preview handler.
+    # # Set up the file system observer with our preview handler.
     observer = Observer()
     event_handler = PreviewHandler(websocket, fs_preview_queue, loop)
-    observer.schedule(event_handler, PREVIEW_DIR, recursive=False)
-    observer.start()
+    # observer.schedule(event_handler, PREVIEW_DIR, recursive=False)
+    # observer.start()
 
     # Start the preview sender task.
     fs_preview_task = asyncio.create_task(send_previews(websocket, fs_preview_queue))
 
     try:
         async def process_message(message):
+            global PLUGIN_DATA_DIR, OUTPUT_DIR, PREVIEW_DIR
             try:
                 data = json.loads(message)
             except Exception as e:
@@ -113,26 +115,26 @@ async def handler(websocket, path=None):
                     if "type" not in data or data["type"] not in ["input", "temp", "output"]:
                         data["type"] = "input"
 
-
                     # Before starting a new generation, make sure preview events are enabled.
                     event_handler.suppress_next = False
 
+                    # Load prompt data from the prompt file file
                     prompt_path = os.path.join(PLUGIN_DATA_DIR, "prompt.json")
                     with open(prompt_path, 'r') as f:
                         prompt_data = json.load(f)
                     print("Prompt data:", prompt_data)
 
+                    # Make sure the input image exists
                     input_image_path = data.get("input_path")
                     if not os.path.exists(input_image_path):
                         await websocket.send(json.dumps({"status": "error", "message": "Input image not found"}))
                         return
                     
+                    # Make sure the workflow exists
                     workflow_path = data.get("workflow_path")
                     if workflow_path is None or not os.path.exists(workflow_path):
                         await websocket.send(json.dumps({"status": "error", "message": "Workflow not found"}))
 
-                    os.makedirs(OUTPUT_DIR, exist_ok=True)
-                    print("Loading input image from path:", input_image_path)
 
                     # Offload the heavy ComfyUI processing to a separate thread.
                     images = await asyncio.to_thread(
@@ -147,10 +149,6 @@ async def handler(websocket, path=None):
                     # Once generation is done, set the flag to skip the final duplicate event.
                     event_handler.suppress_next = True
 
-                    # status_update = {"status": "completed"}
-                    # status_path = os.path.join(PLUGIN_DATA_DIR, "status.json")
-                    # with open(status_path, 'w') as f:
-                    #     json.dump(status_update, f)
                     if len(images) == 0:
                         await websocket.send(json.dumps({"status": "cancelled", "reason":"completed", "message": "Inference completed but no images generated. Probably aborted?"}))
                     else:
@@ -162,6 +160,42 @@ async def handler(websocket, path=None):
                 except Exception as e:
                     print(f"Error during image generation: {e}")
                     await websocket.send(json.dumps({"status": "error", "message": "Error during image generation"}))
+
+            elif data.get("command") == "setPluginDataDir":
+                try:
+                    
+                    # Stop existing observer if running
+                    if 'observer' in locals() and observer.is_alive():
+                        observer.stop()
+                        observer.join()
+
+                    # Update directory paths    
+                    PLUGIN_DATA_DIR = data.get("pluginDataPath")
+                    OUTPUT_DIR = os.path.join(PLUGIN_DATA_DIR, "Output")
+                    PREVIEW_DIR = os.path.join(PLUGIN_DATA_DIR, "Previews")
+
+                    # Create directories if they don't exist
+                    os.makedirs(PLUGIN_DATA_DIR, exist_ok=True)
+                    os.makedirs(OUTPUT_DIR, exist_ok=True)
+                    os.makedirs(PREVIEW_DIR, exist_ok=True)
+
+                    # Restart observer with new paths
+                    observer.schedule(event_handler, PREVIEW_DIR, recursive=False)
+                    observer.start()
+
+                    await websocket.send(json.dumps({
+                        "status": "success",
+                        "message": "Plugin data directories updated",
+                        "pluginDataDir": PLUGIN_DATA_DIR,
+                        "outputDir": OUTPUT_DIR,
+                        "previewDir": PREVIEW_DIR
+                    }))
+                except Exception as e:
+                    print(f"Error setting plugin data directory: {e}")
+                    await websocket.send(json.dumps({
+                        "status": "error",
+                        "message": f"Failed to set plugin data directory: {str(e)}"
+                    }))
 
             elif data.get("command") == "cancel":
                 # Handle the cancel command
@@ -175,6 +209,7 @@ async def handler(websocket, path=None):
         async for message in websocket:
             print("Received message:", message)
             asyncio.create_task(process_message(message))
+
     except websockets.exceptions.ConnectionClosed:
         print("WebSocket client disconnected")
     finally:

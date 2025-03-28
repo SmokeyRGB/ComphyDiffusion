@@ -18,11 +18,18 @@ async function connectComfyUIWebsocket(pluginFolderPath) {
     console.log("Attempting to connect to WebSocket at:", websocket_url);
     websocket = new WebSocket(websocket_url);
 
-    websocket.onopen = evt => {
+    websocket.onopen = async evt => {
         console.log("Connected to python server hook");
         document.getElementById('connectPythonWebsocketButton').disabled = true;
         document.getElementById('connectPythonWebsocketButton').innerHTML = "Connected";
         document.getElementById('connectPythonWebsocketLamp').innerHTML = "🟢";
+        
+        try {
+            const dataFolderPath = await fs.getDataFolder();
+            await setPluginDataPath();
+        } catch (e) {
+            console.error("Error setting plugin data path:", e);
+        }
     };
 
     websocket.onclose = evt => {
@@ -128,7 +135,6 @@ async function handleWebsocketMessage(evt) {
 
 async function saveImageToTempFolder(base64Data) {
     try {
-        const tempFolderPath = await fs.getTemporaryFolder();
         const dataFolderPath = await fs.getDataFolder();
         const file = await dataFolderPath.createFile("temp_image_preview.png", { overwrite: true });
         const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
@@ -138,6 +144,24 @@ async function saveImageToTempFolder(base64Data) {
         console.error("Error saving response image:", error);
     }
 }
+
+async function setPluginDataPath(){
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+
+            data = {
+                command: "setPluginDataDir",
+                pluginDataPath: dataFolderPath.nativePath,
+            }
+            try {
+                websocketModule.sendMessage(data);
+            } catch (e) {
+                console.error("Error sending request to Python server:", e);
+            }
+    } else {
+        console.error("WebSocket not connected");
+    }
+}
+
 
 async function startPythonServer(pluginFolderPath) {
     console.log("Starting Python server...");
@@ -167,5 +191,6 @@ module.exports = {
     startPythonServer,
     getWebsocket: () => websocket,
     sendMessage,
-    sendCancelCommand
+    sendCancelCommand,
+    setPluginDataPath
 };
