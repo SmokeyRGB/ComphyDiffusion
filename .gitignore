@@ -18,8 +18,10 @@ node_modules/
 
 # webpack files
 src/*
+src/index.js
 
 # python files
+python_server/workflows/
 python_server/venv/
 python_server/_backupFiles/
 python_server/__pycache__/
@@ -27,4 +29,5 @@ python_server/__pycache__/
 *.pyo
 .DS_Store
 .env
+
 
