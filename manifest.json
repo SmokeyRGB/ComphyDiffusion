@@ -192,6 +192,14 @@
       }
     },
 
+    {
+      "type": "panel",
+      "id": "workflowEditor",
+      "label": { "default": "Workflow Editor ✏️" },
+      "minimumSize": { "width": 440, "height": 300 },
+      "preferredFloatingSize": { "width": 440, "height": 600 }
+    },
+
 
     {
       "type": "panel",

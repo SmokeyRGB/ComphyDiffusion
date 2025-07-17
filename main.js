@@ -13,6 +13,7 @@ const promptHandling = require('./js/prompt_handeling.js');
 const websocketModule = require('./js/websocket.js'); // Import websocket module
 const utils = require('./js/utils.js'); // Import utils module
 const comfyuiWebview = require('./js/webview.js'); // Import comfyuiWebview module
+const workflowEditor = require('./js/workflowEditor.js'); // Import workflow editor module
 
 // Import animatePanel from the gsap webpack bundle
 const bundle = require('./dist/bundle.js');
@@ -519,6 +520,24 @@ entrypoints.setup({
 
             ]
         },
+
+        workflowEditor: {
+            show(body) {
+                body.insertAdjacentHTML('beforeend', '<div style="padding:10px">Loading…</div>');
+                workflowEditor.openEditor(); // open picker
+            },
+            invokeMenu(id) {
+                switch (id) {
+                case 'reload': workflowEditor.openEditor(workflow_path); break;
+                case 'save':   workflowEditor.closeEditor(); break;
+                }
+            },
+            menuItems: [
+                { id: 'reload', label: 'Reload workflow.json' },
+                { id: 'save',   label: 'Save & Close' }
+            ],
+        },
+  
 
         promptInfo: {
             show(body) {
