@@ -1,6 +1,7 @@
  // Track the panel's current state
  let panelVisible = false;
  let webview;
+ let saveFolder = null;
 
  // Create and configure the webview element
  function createWebview() {
@@ -25,6 +26,33 @@
 
    // Instead of relying on the "load" event (which may not fire), use polling
    pollForWebviewContent();
+
+   // Add event listener for download events
+   webview.addEventListener('will-download', async (event) => {
+      event.preventDefault();                   // stop the built-in save dialog
+
+      const { url, filename, mime } = event;
+
+      try {
+        const folder = await pickCustomFolder();
+        if (!folder) return;                    // user cancelled picker
+
+        // Create or overwrite the file
+        const file = await folder.createFile(filename, { overwrite: true });
+
+        // Fetch the file from the server
+        const response = await fetch(url, { method: 'GET' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const buffer = await response.arrayBuffer();
+        await file.write(buffer, { format: fs.formats.binary });
+
+        console.log(`Saved ${filename} to ${folder.nativePath}`);
+      } catch (err) {
+        console.error('Download failed:', err);
+      }
+    });
+    // Add event listeners for webview load events
    webview.addEventListener("loadstart", console.log("Webview content started loading"));
    webview.addEventListener("loadstop", console.log("Webview content loaded via event listener."));
    webview.addEventListener("loaderror", (e) => {
@@ -32,6 +60,7 @@
 });
 
  }
+ 
 
    // Poll until the webview's contentDocument is available and fully loaded
    function pollForWebviewContent() {
@@ -81,7 +110,11 @@
     }
  }
 
-
+ async function pickCustomFolder() {
+  if (saveFolder) return saveFolder;                 // already chosen
+  saveFolder = await fs.getFolder();                 // shows folder picker
+  return saveFolder;
+}
 
 
  // UXP lifecycle: initialize the panel when the document is ready.
