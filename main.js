@@ -73,7 +73,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     const settings = await utils.loadSettings();
     websocket_url = settings.websocketUrl;
     insertAs = settings.insertAs;
+    workflowEditor.initPanel();
     await pickWorkflow(settings.workflowPath);
+    
 
     document.getElementById("insertSettings").selectedIndex = settings.insertAs === 'whole' ? 0 : settings.insertAs === 'onlyChanges' ? 1 : settings.insertAs === 'maskedLayer' ? 2 : 3;
 
@@ -217,19 +219,23 @@ const pickWorkflow = async (override_path = undefined) => {
         workflow_path = override_path;
         document.getElementById("workflowName").innerText = workflow_path.replace(/^.*[\\\/]/, '');
         document.getElementById("pickWorkflow").style.stroke = "#177fff";
+        await workflowEditor.refresh(workflow_path);
         return;
     }
     else {
-        fs.getFileForOpening({ types: ["json"] }).then(file => {
+        fs.getFileForOpening({ types: ["json"] }).then(async file => {
             workflow_path = file.nativePath;
             if (workflow_path != undefined) {
                 console.log("Workflow selected: " + workflow_path);
                 document.getElementById("pickWorkflow").style.stroke = "#177fff";
                 document.getElementById("workflowName").innerText = workflow_path.replace(/^.*[\\\/]/, '');
                 utils.saveSettings({ workflowPath: workflow_path });
+                await workflowEditor.refresh(workflow_path);
+                return;
             }
         });
     }
+    
 }
 
 
@@ -277,6 +283,13 @@ document.getElementById("connectPythonWebsocketButton").addEventListener('click'
     websocketModule.connectComfyUIWebsocket(pluginFolderPath);
 }
 );
+
+// Insert Mode Selection
+document.getElementById('fitModeDropdown').addEventListener('change', async (e) => {
+    const mode = e.target.value;
+    await require('./js/utils').saveSettings({ fitMode: mode });
+    ui.applyFitMode(mode);
+});
 
 
 
@@ -523,12 +536,12 @@ entrypoints.setup({
 
         workflowEditor: {
             show(body) {
-                body.insertAdjacentHTML('beforeend', '<div style="padding:10px">Loading…</div>');
-                workflowEditor.openEditor(); // open picker
+                body.insertAdjacentHTML('beforeend', '<div id="workflowEditorRoot"style="padding:10px"></div>');
+                workflowEditor.initPanel();
             },
             invokeMenu(id) {
                 switch (id) {
-                case 'reload': workflowEditor.openEditor(workflow_path); break;
+                case 'reload': workflowEditor.refresh(workflow_path); break;
                 case 'save':   workflowEditor.closeEditor(); break;
                 }
             },
@@ -571,6 +584,12 @@ window.require('photoshop').core.suppressResizeGripper(
     {
         "type": "panel",
         "target": "popout",
+        "value": true
+    })
+window.require('photoshop').core.suppressResizeGripper(
+    {
+        "type": "panel",
+        "target": "workflowEditor",
         "value": true
     })
 
@@ -634,7 +653,7 @@ document.getElementById("denoiseSlider").addEventListener('input', () => {
 
 
 document.getElementById("insertSettings").addEventListener("change", evt => {
-    console.log(`Selected item: ${evt.target.selectedIndex}`);
+    console.log(`Selected insert mode: (${evt.target.selectedIndex}) ${evt.target.value}`);
     let index = evt.target.selectedIndex;
     switch (index) {
         case 0:
