@@ -122,297 +122,228 @@ document.getElementById("advPromptingButton").addEventListener('click', hideAdvP
 // In attachZoomPanListeners we use a zoomLevel constant.
 // For clarity, we define helper functions below.
 const ZOOM_LEVEL = 2.5;
-let lastContainerWidth = 0;
-let lastContainerHeight = 0;
 
-// Helper: clamp offsets so the image stays within the container.
-function clampOffsets(offsetX, offsetY, containerWidth, containerHeight, imgWidth, imgHeight) {
-  let minLeft, maxLeft, minTop, maxTop;
-  if (imgWidth > containerWidth) {
-    minLeft = containerWidth - imgWidth;
-    maxLeft = 0;
-  } else {
-    minLeft = 0;
-    maxLeft = containerWidth - imgWidth;
-  }
-  if (imgHeight > containerHeight) {
-    minTop = containerHeight - imgHeight;
-    maxTop = 0;
-  } else {
-    minTop = 0;
-    maxTop = containerHeight - imgHeight;
-  }
-  offsetX = Math.min(Math.max(offsetX, minLeft), maxLeft);
-  offsetY = Math.min(Math.max(offsetY, minTop), maxTop);
-  return { offsetX, offsetY };
+/* --- clamp helper --- */
+function clamp(v, min, max) {
+  return Math.min(Math.max(v, min), max);
+}
+
+/* --- compute correct bounds for any zoom level --- */
+function clampOffsets(offX, offY, cw, ch, iw, ih) {
+  const maxLeft = 0;
+  const minLeft = cw - iw;
+  const maxTop  = 0;
+  const minTop  = ch - ih;
+
+  return {
+    offsetX: clamp(offX, minLeft, maxLeft),
+    offsetY: clamp(offY, minTop,  maxTop)
+  };
+}
+
+/* --- set (un-zoomed) size and optionally center --- */
+function setNormalSize(img, w, h) {
+  const cw = img.parentElement.clientWidth;
+  const ch = img.parentElement.clientHeight;
+
+  /* contain-fit scaling */
+  const scale = Math.min(cw / w, ch / h);   // keeps aspect ratio
+  img.style.width  = w * scale + 'px';
+  img.style.height = h * scale + 'px';
+  img.style.objectFit = 'contain';          // no stretch
+  img.style.left = (cw - w * scale) / 2 + 'px';
+  img.style.top  = (ch - h * scale) / 2 + 'px';
+
+  /* store un-zoomed numbers */
+  img.dataset.normalW = w;
+  img.dataset.normalH = h;
+  img.dataset.scale   = 1;
+}
+
+/* --- apply zoom keeping pointer fixed --- */
+function applyCurrentScale(img, clientX, clientY) {
+  const cw = img.parentElement.clientWidth;
+  const ch = img.parentElement.clientHeight;
+
+  const nw = Number(img.dataset.normalW);
+  const nh = Number(img.dataset.normalH);
+
+  const rect = img.parentElement.getBoundingClientRect();
+  const mx = clientX - rect.left;
+  const my = clientY - rect.top;
+
+  const oldScale = Number(img.dataset.scale || 1);
+  const newScale = oldScale === 1 ? ZOOM_LEVEL : 1;
+  img.dataset.scale = newScale;
+
+  const newW = nw * newScale;
+  const newH = nh * newScale;
+
+  /* cursor-relative zoom math */
+  const imgX = parseFloat(img.style.left) || 0;
+  const imgY = parseFloat(img.style.top)  || 0;
+
+  const newLeft = imgX - (mx - imgX) * (newScale / oldScale - 1);
+  const newTop  = imgY - (my - imgY) * (newScale / oldScale - 1);
+
+  img.style.width  = newW + 'px';
+  img.style.height = newH + 'px';
+
+  const clamped = clampOffsets(newLeft, newTop, cw, ch, newW, newH);
+  img.style.left = clamped.offsetX + 'px';
+  img.style.top  = clamped.offsetY + 'px';
 }
 
 function attachZoomPanListeners(img) {
-  if (!img || img.getAttribute('data-listeners-added')) return;
-  
-  console.log("Attaching zoom/pan listeners to image");
-  img.setAttribute('data-listeners-added', 'true');
-
+  if (img.dataset.listenersAdded) return;
+  img.dataset.listenersAdded = 'true';
   img.style.position = 'absolute';
-  let container = document.getElementById("generationPreview");
-  
-  // Get base offset for centered image in normal state.
-  let baseOffsetX = (container.clientWidth - img.clientWidth) / 2;
-  let baseOffsetY = 0;
-  img.style.left = baseOffsetX + "px";
-  img.style.top = baseOffsetY + "px";
 
-  img.style.pointerEvents = 'auto';
-  img.style.cursor = 'grab';
-  
-  // Use the base offsets as the starting internal offsets.
-  let internalOffsetX = baseOffsetX;
-  let internalOffsetY = baseOffsetY;
-  let isDragging = false;
-  let lastX = 0;
-  let lastY = 0;
+  let dragging = false, startX = 0, startY = 0, baseLeft = 0, baseTop = 0;
 
-  const startDrag = (e) => {
-    e.preventDefault();
-    isDragging = true;
-    lastX = e.clientX;
-    lastY = e.clientY;
-    img.style.cursor = 'grabbing';
+  const start = e => {
+    dragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    baseLeft = parseFloat(img.style.left) || 0;
+    baseTop  = parseFloat(img.style.top)  || 0;
   };
 
-  const drag = (e) => {
-    if (!isDragging) return;
-    const deltaX = e.clientX - lastX;
-    const deltaY = e.clientY - lastY;
-    lastX = e.clientX;
-    lastY = e.clientY;
-    internalOffsetX += deltaX;
-    internalOffsetY += deltaY;
+  const move = e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
 
-    // Clamp the offset so the image remains within container boundaries.
-    let clamped = clampOffsets(
-      internalOffsetX,
-      internalOffsetY,
-      container.clientWidth,
-      container.clientHeight,
-      img.clientWidth,
-      img.clientHeight
-    );
-    internalOffsetX = clamped.offsetX;
-    internalOffsetY = clamped.offsetY;
+    const newLeft = baseLeft + dx;
+    const newTop  = baseTop  + dy;
 
-    img.style.left = internalOffsetX + 'px';
-    img.style.top = internalOffsetY + 'px';
+    const cw = img.parentElement.clientWidth;
+    const ch = img.parentElement.clientHeight;
+    const iw = parseFloat(img.style.width);
+    const ih = parseFloat(img.style.height);
+
+    const clamped = clampOffsets(newLeft, newTop, cw, ch, iw, ih);
+    img.style.left = clamped.offsetX + 'px';
+    img.style.top  = clamped.offsetY + 'px';
   };
 
-  const endDrag = () => {
-    isDragging = false;
-    img.style.cursor = 'grab';
-  };
+  const end = () => dragging = false;
 
-  // Double-click toggles zoom.
-  const handleDoubleClick = (e) => {
-    e.preventDefault();
-    if (img.dataset.doubled === "true") {
-      // ZOOMING OUT:
-      // Compute the pointer's image coordinate in zoomed-in mode:
-      // (e.clientX - internalOffsetX) / ZOOM_LEVEL.
-      // After zooming out, we want that same coordinate under the pointer.
-      internalOffsetX = e.clientX - (e.clientX - internalOffsetX) / ZOOM_LEVEL;
-      internalOffsetY = e.clientY - (e.clientY - internalOffsetY) / ZOOM_LEVEL;
-      
-      // Revert to normal dimensions.
-      if (img.dataset.originalWidth) img.style.width = img.dataset.originalWidth;
-      if (img.dataset.originalHeight) img.style.height = img.dataset.originalHeight;
+  img.addEventListener('dblclick', e => applyCurrentScale(img, e.clientX, e.clientY));
+  img.addEventListener('pointerdown', start);
+  document.addEventListener('pointermove', move);
+  document.addEventListener('pointerup', end);
+}
 
-      // Clamp after calculating new offsets.
-      let clamped = clampOffsets(
-        internalOffsetX,
-        internalOffsetY,
-        container.clientWidth,
-        container.clientHeight,
-        parseFloat(img.style.width),
-        parseFloat(img.style.height)
-      );
-      internalOffsetX = clamped.offsetX;
-      internalOffsetY = clamped.offsetY;
-      
-      img.style.left = internalOffsetX + 'px';
-      img.style.top = internalOffsetY + 'px';
-      img.dataset.doubled = "false";
-      lastX = e.clientX;
-      lastY = e.clientY;
-    } else {
-      // ZOOMING IN:
-      if (!img.dataset.originalWidth) {
-        img.dataset.originalWidth = img.style.width || img.getBoundingClientRect().width + "px";
-      }
-      if (!img.dataset.originalHeight) {
-        img.dataset.originalHeight = img.style.height || img.getBoundingClientRect().height + "px";
-      }
-      let originalW = parseFloat(img.dataset.originalWidth);
-      let originalH = parseFloat(img.dataset.originalHeight);
-      // Update offset so the clicked point remains fixed.
-      internalOffsetX = ZOOM_LEVEL * internalOffsetX - (ZOOM_LEVEL - 1) * e.clientX;
-      internalOffsetY = ZOOM_LEVEL * internalOffsetY - (ZOOM_LEVEL - 1) * e.clientY;
-      
+/* window resize → keep fit consistent */
+window.addEventListener('resize', () => {
+  const img = document.querySelector('#generationPreview img');
+  if (img) {
+    const nw = Number(img.dataset.normalW);
+    const nh = Number(img.dataset.normalH);
+    const scale = Number(img.dataset.scale || 1);
+    const cw = img.parentElement.clientWidth;
+    const ch = img.parentElement.clientHeight;
 
-      img.style.width = (originalW * ZOOM_LEVEL) + "px";
-      img.style.height = (originalH * ZOOM_LEVEL) + "px";
+    img.style.width  = nw * scale + 'px';
+    img.style.height = nh * scale + 'px';
 
-      // Clamp the new offsets.
-      let clamped = clampOffsets(
-        internalOffsetX,
-        internalOffsetY,
-        container.clientWidth,
-        container.clientHeight,
-        originalW * ZOOM_LEVEL,
-        originalH * ZOOM_LEVEL
-      );
-      internalOffsetX = clamped.offsetX;
-      internalOffsetY = clamped.offsetY;
-      
-      img.style.left = internalOffsetX + 'px';
-      img.style.top = internalOffsetY + 'px';
-      img.dataset.doubled = "true";
-      lastX = e.clientX;
-      lastY = e.clientY;
+    const clamped = clampOffsets(parseFloat(img.style.left), parseFloat(img.style.top), cw, ch, nw * scale, nh * scale);
+    img.style.left = clamped.offsetX + 'px';
+    img.style.top  = clamped.offsetY + 'px';
+  }
+});
+
+function applyFitMode(mode) {
+    const img = document.querySelector('#generationPreview img');
+    if (!img) return;
+
+    const natW = img.naturalWidth, natH = img.naturalHeight;
+    if (!natW) return;
+
+    const cw = img.parentElement.clientWidth;
+    const ch = img.parentElement.clientHeight;
+
+    let scale;
+    switch (mode) {
+        case 'fit-height':  scale = ch / natH; break;
+        case 'fit-width':   scale = cw / natW; break;
+        case 'no-overflow': scale = Math.min(cw / natW, ch / natH); break;
     }
-  };
 
-  img.removeEventListener('pointerdown', startDrag);
-  document.removeEventListener('pointermove', drag);
-  document.removeEventListener('pointerup', endDrag);
-  img.removeEventListener('dblclick', handleDoubleClick);
-  
-  img.addEventListener('pointerdown', startDrag);
-  document.addEventListener('pointermove', drag);
-  document.addEventListener('pointerup', endDrag);
-  img.addEventListener('dblclick', handleDoubleClick);
+    setNormalSize(img, natW * scale, natH * scale);
 }
 
 const updatePreview = async (center = false) => {
-  const img_container = document.getElementById("generationPreview");
-  let img_element = img_container.querySelector('img');
-  if (!img_element) {
-    img_element = document.createElement('img');
-    img_container.appendChild(img_element);
+  const container = document.getElementById("generationPreview");
+  let img = container.querySelector('img');
+
+  if (!img) {
+    img = document.createElement('img');
+    container.appendChild(img);
   }
-  img_element.onload = () => {
-    // Scale so the image fills 100% of the container's height.
-    let scale = img_container.clientHeight / img_element.naturalHeight;
-    let normalWidth = img_element.naturalWidth * scale;
-    let normalHeight = img_element.naturalHeight * scale;
-    img_element.style.width = normalWidth + "px";
-    img_element.style.height = normalHeight + "px";
-    // Center horizontally.
-    let offsetX = (img_container.clientWidth - normalWidth) / 2;
-    let offsetY = 0;
-    img_element.style.left = offsetX + "px";
-    img_element.style.top = offsetY + "px";
-    // Save these as the normal dimensions.
-    img_element.dataset.originalWidth = normalWidth + "px";
-    img_element.dataset.originalHeight = normalHeight + "px";
-    img_element.dataset.doubled = "false";
-    attachZoomPanListeners(img_element);
-    lastContainerWidth = img_container.clientWidth;
-    lastContainerHeight = img_container.clientHeight;
+
+  /* keep current position & scale */
+  const oldLeft = img.style.left || '';
+  const oldTop  = img.style.top  || '';
+  const oldW    = img.style.width  || '';
+  const oldH    = img.style.height || '';
+
+  img.onload = () => {
+    /* only run once per image load */
+    if (img.dataset.loaded) return;
+    img.dataset.loaded = 'true';
+
+    const scale = Math.min(
+      container.clientWidth  / img.naturalWidth,
+      container.clientHeight / img.naturalHeight
+    );
+    setNormalSize(img, img.naturalWidth * scale, img.naturalHeight * scale);
+    attachZoomPanListeners(img);
   };
+
   try {
-    if (updateLivePreview) {
-      img_element.src = 'file://' + dataFolderPath.nativePath + '/temp_image_preview.png';
-      updateLivePreview = false;
-    } else {
-      img_element.src = "https://i.gifer.com/XVo6.gif";
-    }
+    const url = updateLivePreview
+      ? 'file://' + dataFolderPath.nativePath + '/temp_image_preview.png'
+      : "https://i.gifer.com/XVo6.gif";
+
+    /* no style reset, only src swap */
+    img.src = url + '?t=' + Date.now();  // cache-bust
   } catch (e) {
     console.log(e);
   }
+
   displayHelptext();
 };
 
-window.addEventListener('resize', () => {
-  const container = document.getElementById("generationPreview");
-  const img = container.querySelector('img');
-  if (!img) return;
-  let newContainerWidth = container.clientWidth;
-  let newContainerHeight = container.clientHeight;
-  let newScale = newContainerHeight / img.naturalHeight;
-  let newNormalWidth = img.naturalWidth * newScale;
-  let newNormalHeight = img.naturalHeight * newScale;
-  let newBaseX = (newContainerWidth - newNormalWidth) / 2;
-  let newBaseY = 0;
-  
-  if (img.dataset.doubled !== "true") {
-    // In zoomed-out mode: recalc and center.
-    img.style.width = newNormalWidth + "px";
-    img.style.height = newNormalHeight + "px";
-    img.style.left = newBaseX + "px";
-    img.style.top = newBaseY + "px";
-    img.dataset.originalWidth = newNormalWidth + "px";
-    img.dataset.originalHeight = newNormalHeight + "px";
-  } else {
-    // If zoomed in, convert the current absolute offset to a pan offset relative to the old centered state.
-    let currentLeft = parseFloat(img.style.left);
-    let currentTop = parseFloat(img.style.top);
-    let oldScale = lastContainerHeight / img.naturalHeight;
-    let oldNormalWidth = img.naturalWidth * oldScale;
-    let oldNormalHeight = img.naturalHeight * oldScale;
-    let oldBaseX = (lastContainerWidth - oldNormalWidth) / 2;
-    let oldBaseY = 0;
-    let panX = (currentLeft - oldBaseX) / ZOOM_LEVEL;
-    let panY = (currentTop - oldBaseY) / ZOOM_LEVEL;
-    // Apply the same pan offset relative to the new base.
-    let newLeft = newBaseX + panX * ZOOM_LEVEL;
-    let newTop = newBaseY + panY * ZOOM_LEVEL;
-    // Clamp the new offsets.
-    let clamped = clampOffsets(
-      newLeft,
-      newTop,
-      newContainerWidth,
-      newContainerHeight,
-      newNormalWidth * ZOOM_LEVEL,
-      newNormalHeight * ZOOM_LEVEL
-    );
-    img.style.width = (newNormalWidth * ZOOM_LEVEL) + "px";
-    img.style.height = (newNormalHeight * ZOOM_LEVEL) + "px";
-    img.style.left = clamped.offsetX + "px";
-    img.style.top = clamped.offsetY + "px";
-    img.dataset.originalWidth = newNormalWidth + "px";
-    img.dataset.originalHeight = newNormalHeight + "px";
-  }
-  lastContainerWidth = newContainerWidth;
-  lastContainerHeight = newContainerHeight;
-});
-
-
 
 const updateTempPreview = async (previewData) => {
-    const img_container = document.getElementById("generationPreview");
-    let img_element = img_container.querySelector('img');
-    if (!img_element) {
-        img_element = document.createElement('img');
-        img_container.appendChild(img_element);
-    }
-    img_element.onload = () => {
-        let scale = Math.max(
-            img_container.clientWidth / img_element.naturalWidth,
-            img_container.clientHeight / img_element.naturalHeight
-        );
-        img_element.style.width = (img_element.naturalWidth * scale) + "px";
-        img_element.style.height = (img_element.naturalHeight * scale) + "px";
-        let offsetX = (img_container.clientWidth - img_element.clientWidth) / 2;
-        let offsetY = (img_container.clientHeight - img_element.clientHeight) / 2;
-        img_element.style.left = offsetX + "px";
-        img_element.style.top = offsetY + "px";
-        attachZoomPanListeners(img_element);
-    };
-    try {
-        img_element.src = `data:image/png;base64,${previewData}`;
-        updateLivePreview = false;
-    } catch (e) {
-        console.log(e);
-    }
+  const container = document.getElementById("generationPreview");
+  let img = container.querySelector('img');
+
+  if (!img) {
+    img = document.createElement('img');
+    container.appendChild(img);
+  }
+
+  /* keep current transform */
+  const oldLeft = img.style.left || '';
+  const oldTop  = img.style.top  || '';
+
+  img.onload = () => {
+    if (img.dataset.loaded) return;
+    img.dataset.loaded = 'true';
+
+    const scale = Math.min(
+      container.clientWidth  / img.naturalWidth,
+      container.clientHeight / img.naturalHeight
+    );
+    setNormalSize(img, img.naturalWidth * scale, img.naturalHeight * scale);
+    attachZoomPanListeners(img);
+  };
+
+  img.src = `data:image/png;base64,${previewData}`;
+  // keep left/top untouched → no jump
 };
 
 const updateFinalPreview = async (dataFolderPath) => {
@@ -443,12 +374,7 @@ const updateFinalPreviewFromData = async (base64Data) => {
             img_container.clientWidth / img_element.naturalWidth,
             img_container.clientHeight / img_element.naturalHeight
         );
-        img_element.style.width = (img_element.naturalWidth * scale) + "px";
-        img_element.style.height = (img_element.naturalHeight * scale) + "px";
-        let offsetX = (img_container.clientWidth - img_element.clientWidth) / 2;
-        let offsetY = (img_container.clientHeight - img_element.clientHeight) / 2;
-        img_element.style.left = offsetX + "px";
-        img_element.style.top = offsetY + "px";
+        setNormalSize(img_element, img_element.naturalWidth * scale, img_element.naturalHeight * scale);
         attachZoomPanListeners(img_element);
     };
     try {
@@ -581,6 +507,7 @@ module.exports = {
     changePreviewSize,
     hideAdvPrompts,
     updatePreview,
+    applyFitMode,
     updateTempPreview,
     updateAutoQueue,
     display_progress,

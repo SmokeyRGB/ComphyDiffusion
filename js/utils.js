@@ -1,12 +1,14 @@
 const photoshop = require("photoshop");
 const app = photoshop.app;
 const websocketModule = require("./websocket");
+const ui = require("./ui");
 
 const DEFAULT_SETTINGS = {
     comfyUIPath: '',
     websocketUrl: 'ws://127.0.0.1:6789',
     workflowPath: '',
     insertAs: 'whole',
+    fitMode: 'fit-height',
 };
 
 
@@ -17,6 +19,20 @@ const pluginCleanup = async () => {
     //await websocketModule.closeWebsocket();
 }
 
+const loadWorkflow = async (workflow_path) => {
+    try {
+        const workflowFile = await fs.getEntryWithUrl(workflow_path);
+        //parse the workflow file as JSON data
+        const workflowData = await workflowFile.read();
+        return JSON.parse(workflowData);
+    } catch (error) {
+        console.error('Error loading workflow:', error);
+        return {};
+    }
+}
+
+
+
 const loadSettings = async () => {
     try {
         const settingsFilePath = dataFolderPath.nativePath + '\\' + 'pluginSettings.json';
@@ -24,11 +40,17 @@ const loadSettings = async () => {
         const settingsFile = await fs.getEntryWithUrl(settingsFilePath);
         const settingsData = await settingsFile.read();
         const settings = settingsData ? JSON.parse(settingsData) : {};
+        console.log('Settings loaded:', settings);
+        document.getElementById('fitModeDropdown').value = settings.fitMode || DEFAULT_SETTINGS.fitMode;
+        ui.applyFitMode(settings.fitMode || DEFAULT_SETTINGS.fitMode);
         return {...DEFAULT_SETTINGS, ...settings};
     } catch (error) {
         console.error('Error loading settings:', error);
+        document.getElementById('fitModeDropdown').value = settings.fitMode || DEFAULT_SETTINGS.fitMode;
+        ui.applyFitMode(settings.fitMode || DEFAULT_SETTINGS.fitMode);
         return DEFAULT_SETTINGS;
     }
+
 }
 
 const saveSettings = async (updates) => {
@@ -104,6 +126,7 @@ const selectionActive = async () => {
 
 module.exports = {
     pluginCleanup,
+    loadWorkflow,
     loadSettings,
     saveSettings,
     getActiveSelection,
