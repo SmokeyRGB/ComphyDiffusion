@@ -104,7 +104,11 @@ function render() {
 
         `;
         const inp = row.querySelector('sp-textfield');
-        inp.addEventListener('input', () => setDeep(workflowObj[id].inputs, fullKey, inp.value) && save());
+
+        inp.addEventListener('input', async () => {
+            setDeep(workflowObj[id].inputs, fullKey, inp.value)
+            await save();
+        });
 
         if (isPath) {
             row.querySelector('.pickBtn').addEventListener('click', async () => {
