@@ -19,6 +19,145 @@ const pluginCleanup = async () => {
     //await websocketModule.closeWebsocket();
 }
 
+const verifyComfyUI = async (comfyUIPath, previewDir) => {
+  console.log('Verifying ComfyUI path:', comfyUIPath);
+  try {
+    const dirExists = await fs.getEntryWithUrl(comfyUIPath)
+      .then(() => true)
+      .catch(() => false);
+    if (!dirExists) throw new Error('ComfyUI path is invalid');
+
+    await fixComfyUIListener(comfyUIPath);
+    await fixComfyUILatentPreview(comfyUIPath, previewDir);
+  } catch (err) {
+    console.error('Error verifying ComfyUI path:', err);
+    alert('Error: ' + err.message);
+  }
+};
+
+const fixComfyUIListener = async (comfyUIPath) => {
+  try {
+    const comfyDir = await fs.getEntryWithUrl(comfyUIPath);
+    if (!comfyDir) throw new Error('ComfyUI directory not found');
+
+    const entries = await comfyDir.getEntries();
+    let runFile = null;
+    for (const entry of entries) {
+      if (entry.isFile && entry.name.toLowerCase().endsWith('.bat')) {
+        const text = await entry.read();           // <- no format argument
+        if (/python\.exe\s+main\.py/i.test(text) && !text.includes('--cpu')) {
+          runFile = entry;
+          break;
+        }
+      }
+    }
+    if (!runFile) throw new Error('ComfyUI run file (batch file with "python.exe main.py") not found');
+
+    let content = await runFile.read();
+    if (!content.includes('--listen')) {
+      return new Promise((resolve, reject) => {
+        confirm({
+          title: 'ComfyUI Listener Fix',
+          message: 'ComfyUI does not listen for incoming connections. \n\nAdd "--listen 8888" automatically?',
+          buttons: [
+            {
+              label: 'Yes',
+              onClick: async () => {
+                try {
+                  const updated = content.replace(
+                    /^(.*python\.exe\s+main\.py(?:\s+[^\r\n]*)?)(\r?\n|$)/im,
+                    '$1 --listen 8888$2'
+                  );
+                  await runFile.write(updated);   // <- no format argument
+                  console.log('Added --listen 8888 to ComfyUI run file');
+                  resolve();
+                } catch (e) { reject(e); }
+              }
+            },
+            { label: 'No', onClick: () => reject(new Error('--listen flag missing')) }
+          ]
+        });
+      });
+    }
+    else {
+        console.log('Checked ComfyUI run file, --listen flag present');
+        return Promise.resolve();
+    }
+  } catch (err) {
+    console.error('Error fixing ComfyUI listener:', err);
+    alert('Error: ' + err.message);
+  }
+};
+
+/**
+ * Makes sure latent_preview.py contains the code that dumps each preview
+ * image to disk inside `previewDir`.
+ *
+ * @param {string} previewDir  Absolute path where previews should be written
+ */
+const fixComfyUILatentPreview = async (comfyUIDir, previewDir) => {
+  try {
+    // 1. Locate the file
+    filePath = comfyUIDir + '\\latent_preview.py';
+    const latentFile = await fs.getEntryWithUrl(filePath)
+      .catch(() => null);
+    if (!latentFile) {
+      throw new Error('latent_preview.py not found in ComfyUI root');
+    }
+
+    // 2. Read its content
+    let content = await latentFile.read();
+    if (!content) {
+      throw new Error('latent_preview.py is empty or could not be read');
+    }
+
+    // 3. Code we want to insert
+    const marker = 'preview_image = preview_bytes[1]';
+    const snippet = [
+      '                import os',
+      '                preview_path = os.path.join(previewDir, f"preview.{preview_format.lower()}")',
+      '                os.makedirs(' + JSON.stringify(previewDir) + ', exist_ok=True)',
+      '                preview_image.save(preview_path)'
+    ].join('\n');
+
+    // 4. Already OK?
+    if (content.includes(snippet)) {
+      console.log('Checked ComfyUI latent_preview. Latent preview code already present');
+      return;
+    }
+    else {
+        console.log('Checked ComfyUI latent_preview. Latent preview code missing, insert?');
+    }
+
+
+    // 5. Ask the user first
+    return new Promise(async (resolve, reject) => {
+   if (confirm("latent_preview.py is missing preview code. \n\n Add it?")) {
+            try {
+                if (!content.includes(marker)) {
+                  throw new Error('Could not locate insertion point in latent_preview.py');
+                }
+                const newContent = content.replace(marker, marker + '\n' + snippet);
+                await latentFile.write(newContent);
+                console.log('Updated latent_preview.py with preview save code');
+                resolve();
+              } catch (e) {
+                reject(e);
+              }
+            }
+            else {
+              reject(new Error('User cancelled latent preview code insertion'));
+            }
+      })
+
+  } catch (err) {
+    console.error('Error fixing ComfyUI latent preview:', err);
+    alert('Error: ' + err.message);
+  }
+};
+
+
+
 const loadWorkflow = async (workflow_path) => {
     try {
         const workflowFile = await fs.getEntryWithUrl(workflow_path);
@@ -126,6 +265,7 @@ const selectionActive = async () => {
 
 module.exports = {
     pluginCleanup,
+    verifyComfyUI,
     loadWorkflow,
     loadSettings,
     saveSettings,

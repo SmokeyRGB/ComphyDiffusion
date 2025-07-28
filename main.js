@@ -75,6 +75,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     insertAs = settings.insertAs;
     workflowEditor.initPanel();
     await pickWorkflow(settings.workflowPath);
+
+    if (settings.comfyUIPath) {
+        await utils.verifyComfyUI(settings.comfyUIPath, dataFolderPath.nativePath + '/Previews');
+    }
     
 
     document.getElementById("insertSettings").selectedIndex = settings.insertAs === 'whole' ? 0 : settings.insertAs === 'onlyChanges' ? 1 : settings.insertAs === 'maskedLayer' ? 2 : 3;
@@ -262,6 +266,7 @@ document.getElementById("selectComfyUIFolderButton").addEventListener('click', a
             await utils.saveSettings({comfyUIPath: folder.nativePath});
             document.getElementById('comfyUIFolderPath').textContent = folder.nativePath;
             document.getElementById('comfyUIFolderPath').style.color = '#11c711';
+            await utils.verifyComfyUI(folder.nativePath, dataFolderPath.nativePath + '/Previews');
         }
     } catch (error) {
         console.error('Error selecting ComfyUI folder:', error);
@@ -476,6 +481,9 @@ entrypoints.setup({
                         let promptData = promptHandling.getLayerPromptData(app.activeDocument.activeLayers[0].id);
                         console.log("Prompt Data: ", promptData);
                         break;
+                    case "openPluginDataDir":
+                        shell.openPath(dataFolderPath.nativePath);
+                        break;
 
                 }
                 //handleFlyout(id);
@@ -495,6 +503,7 @@ entrypoints.setup({
                             { id: "createSelectionChannel", label: "Fix not-saving selection" },
                             { id: "connectComfyUIWebsocket", label: "Connect to ComfyUIWebsocket" },
                             { id: "getLayerXMP", label: "Get Layers XMP information" },
+                            { id: "openPluginDataDir", label: "Open the plugins data directory" },
                         ]
                 },
             ],
