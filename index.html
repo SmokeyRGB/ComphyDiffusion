@@ -173,10 +173,10 @@
             <sp-card class="settingsCard">
               <p slot="description" style="font-size: 14px;">Preview scaling mode</p>
               <sp-divider style="margin:5px"></sp-divider>
-              <div slot="footer" style="padding: 4px 0; overlay: none;">
-                <sp-dropdown id="fitModeDropdown" size="m" style="width: 120px; font-size: 12px;">
-                  <sp-menu slot="options">
-                    <sp-menu-item id="fitHeightOption" value="fit-height">Fit Height</sp-menu-item>
+              <div slot="footer" style="padding: 4px 0; overflow: visible">
+                <sp-dropdown id="fitModeDropdown" size="m" style="width: 120px; font-size: 12px; z-index: 1000;">
+                  <sp-menu style="z-index: 1000;" slot="options">
+                    <sp-menu-item id="fitHeightOption"  value="fit-height">Fit Height</sp-menu-item>
                     <sp-menu-item id="fitWidthOption" value="fit-width">Fit Width</sp-menu-item>
                     <sp-menu-item id="noOverflowOption" value="no-overflow">No Overflow</sp-menu-item>
                   </sp-menu>
