@@ -249,67 +249,18 @@
   </div>
 
 
-  <!-- PROMPT INFORMATION PANEL -->
-  <div id="promptInfoPanel" style="margin: 5px">
-    <div style="display: inline-flex; width: 100%; overflow: hidden; white-space: nowrap">
-      <table>
-        <thead></thead>
-        <tbody>
-          <tr>
-            <td>
-              <sp-textfield size="s" style="width:70%" id="posPromptInfo">
-                <sp-label slot="label" style="padding:0px">Positive Prompt</sp-label>
-              </sp-textfield>
-              <sp-action-button disabled id="promptInfoRecyclePositiveButton" class="promptInfoButtons" size="s">♻</sp-action-button>
-              <sp-action-button disabled id="promptInfoCopyPositiveButton" class="promptInfoButtons" size="s">📋</sp-action-button>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <sp-textfield size="s" style="width:70%" id="negPromptInfo">
-                <sp-label slot="label" style="padding:0px">Negative Prompt</sp-label>
-              </sp-textfield>
-              <sp-action-button disabled id="promptInfoRecycleNegativeButton" class="promptInfoButtons" size="s">♻</sp-action-button>
-              <sp-action-button disabled id="promptInfoCopyNegativeButton" class="promptInfoButtons" size="s">📋</sp-action-button>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <sp-textfield size="s" style="width:70%" id="seedPromptInfo">
-                <sp-label slot="label" style="padding:0px">Seed</sp-label>
-              </sp-textfield>
-              <sp-action-button disabled id="promptInfoRecycleSeedButton" class="promptInfoButtons" size="s">♻</sp-action-button>
-              <sp-action-button disabled id="promptInfoCopySeedButton" class="promptInfoButtons" size="s">📋</sp-action-button>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <sp-textfield size="s" style="width:70%" id="stepsPromptInfo">
-                <sp-label slot="label" style="padding:0px">Steps</sp-label>
-              </sp-textfield>
-              <sp-action-button disabled id="promptInfoRecycleStepsButton" class="promptInfoButtons" size="s">♻</sp-action-button>
-              <sp-action-button disabled id="promptInfoCopyStepsButton" class="promptInfoButtons" size="s">📋</sp-action-button>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <sp-textfield size="s" style="width:70%" id="cfgPromptInfo">
-                <sp-label slot="label" style="padding:0px">CFG</sp-label>
-              </sp-textfield>
-              <sp-action-button disabled id="promptInfoRecycleCfgButton" class="promptInfoButtons" size="s">♻</sp-action-button>
-              <sp-action-button disabled id="promptInfoCopyCfgButton" class="promptInfoButtons" size="s">📋</sp-action-button>
-            </td>
-          </tr>
-          <tr style="text-align: center; padding: 10px">
-            <td>
-              <sp-action-button id="getEmbeddedPromptInfoButton" size="s">Get Prompt</sp-action-button>
-              <sp-action-button disabled id="useAllExtractedPromptInfo" class="promptInfoButtons" size="s">Use All</sp-action-button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+
+<!-- Prompt & Workflow – header + tiles -->
+<div id="promptInfoPanel">
+  <!-- HEADER BAR -->
+  <div id="promptHeaderBar">
+    <sp-action-button id="toggleAllBtn" size="s" quiet>Uncollapse</sp-action-button>
+    <sp-button id="prmUseAll" size="s" style="font-size: 10px;" variant="accent">Use All</sp-button>
   </div>
+
+  <!-- TILES -->
+  <div id="promptTiles" class="tile-container"></div>
+</div>
 
   
 </body>

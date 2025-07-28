@@ -3,6 +3,11 @@ const { XMPMeta, XMPConst } = require('uxp').xmp;
 const bp = require("photoshop").action.batchPlay;
 const psCore = require("photoshop").core;
 
+
+/* * This module handles reading, writing, and managing prompt data for Photoshop layers using XMP metadata.
+ * It allows storing and retrieving prompt and workflow data for each layer in the document's XMP metadata.
+ * The data is stored under a custom namespace to avoid conflicts with other metadata. */
+
 // Custom XMP namespace for our plugin (keeping original name)
 const NS_COMPHYDIFFUSION = "http://ns.comphydiffusion.com/xmp/1.0/";
 let namespaceRegistered = false;
@@ -137,6 +142,7 @@ async function removeLayerPromptData(layerId) {
     }
 }
 
+// ----------  FILE-BASED PROMPT HANDLING FUNCTIONS ----------
 // Maintain existing file-based functions exactly as they were
 async function readPromptFile() {
     try {
@@ -222,11 +228,201 @@ async function loadPrompt() {
     }
 }
 
+// ----------  HELPERS FOR PROMPT INFO PANEL ----------
+
+const COLLAPSE_KEY = 'ComfyPS_promptCollapse';
+let collapseState = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}');
+
+const getCurrentLayerData = async () => {
+  const selected = require('photoshop').app.activeDocument?.activeLayers[0];
+  if (!selected) return null;
+  return getLayerPromptData(selected.id);
+};
+
+const hydratePromptInfo = (data) => {
+  document.getElementById('posPromptInfo').value   = data?.prompt?.positive ?? '';
+  document.getElementById('negPromptInfo').value   = data?.prompt?.negative ?? '';
+  document.getElementById('seedInfo').value        = data?.prompt?.seed     ?? '';
+  document.getElementById('stepsInfo').value       = data?.prompt?.steps    ?? '';
+  document.getElementById('cfgInfo').value         = data?.prompt?.cfg      ?? '';
+};
+
+const recyclePrompt = (part) => {
+  if (part === 'positive') document.getElementById('positivePrompt').value = document.getElementById('posPromptInfo').value;
+  if (part === 'negative') document.getElementById('negativePrompt').value = document.getElementById('negPromptInfo').value;
+  if (part === 'seed')     document.getElementById('seed').value          = document.getElementById('seedInfo').value;
+  // save & sync
+  savePrompt();
+};
+
+const recycleWorkflow = async (data) => {
+  if (!data?.workflow) return;
+  // Write workflow JSON to temp file
+  const tempFolder = await require('uxp').storage.localFileSystem.getTemporaryFolder();
+  const tempFile   = await tempFolder.createFile('tempWorkflow.json', { overwrite: true });
+  await tempFile.write(JSON.stringify(data.workflow), { append: false });
+  // Tell main to use it
+  require('../main').pickWorkflow(tempFile.nativePath);
+};
+
+const useAll = async () => {
+  const data = await getCurrentLayerData();
+  if (!data) return;  
+  // Update all UI elements first
+  console.log('Using all prompts from layer:', data);
+  //recyclePrompt('positive');
+  //recyclePrompt('negative');
+  //recyclePrompt('seed');
+  
+    document.getElementById('positivePrompt').value = data.prompt.positive;
+    document.getElementById('negativePrompt').value = data.prompt.negative;
+    document.getElementById('seed').value        = data.prompt.seed;
+    document.getElementById('denoiseSlider').value = data.prompt.denoise || 1; // Default to 0.5 if not set
+    document.getElementById('denoiseSlider').dispatchEvent(new Event('input'));
+  document.getElementById('steps').value = data.prompt.steps;
+  document.getElementById('cfg').value   = data.prompt.cfg;
+  
+  // Then perform single save after all updates
+  await Promise.all([
+      //recycleWorkflow(data),
+      savePrompt()
+  ]);
+};
+
+/* promptInfoPanel.js – tile renderer */
+
+function renderPromptTiles(data) {
+  const root = document.getElementById('promptTiles');
+  root.innerHTML = '';
+
+  // ---- Positive tile ----
+  makeTile(root, 'Positive Prompt', data?.prompt?.positive ?? '', (val) => {
+    document.getElementById('positivePrompt').value = val;
+    
+  });
+
+  // ---- Negative tile ----
+  makeTile(root, 'Negative Prompt', data?.prompt?.negative ?? '', (val) => {
+    document.getElementById('negativePrompt').value = val;
+  });
+
+  // ---- Seed tile ----
+  makeTile(root, 'Seed', data?.prompt?.seed ?? '', (val) => {
+    document.getElementById('seed').value = val;
+  });
+
+  // ---- Steps tile ----
+  makeTile(root, 'Steps', data?.prompt?.steps ?? '', (val) => {
+    document.getElementById('steps').value = val;
+  });
+
+  // ---- CFG tile ----
+  makeTile(root, 'CFG', data?.prompt?.cfg ?? '', (val) => {
+    document.getElementById('cfg').value = val;
+  });
+
+  // ---- Spacer ----
+  const spacer = document.createElement('div');
+  spacer.className = 'tile-spacer';
+  root.appendChild(spacer);
+
+  // ---- Workflow tile ----
+  makeTile(root, 'Workflow', '↻ Reuse Workflow', async () => {
+    if (!data?.workflow) return;
+    const tmp = await fs.getTemporaryFolder();
+    const f   = await tmp.createFile('tempWorkflow.json', { overwrite: true });
+    await f.write(JSON.stringify(data.workflow), { append: false });
+    require('../main').pickWorkflow(f.nativePath);
+  }, true); // footer-style button
+
+}
+
+function makeTile(root, title, value, onRecycle, footerOnly = false) {
+  const tile = document.createElement('div');
+  tile.className = collapseState[title] ? 'tile collapsed' : 'tile';
+
+  const hdr = document.createElement('div');
+  hdr.className = 'tile-header';
+  hdr.innerHTML = `${title} <span>${collapseState[title] ? '▼' : '▲'}</span>`;
+
+  const body = document.createElement('div');
+  body.className = 'tile-body';
+
+  if (!footerOnly) {
+    const row = document.createElement('div');
+    row.className = 'tile-row';
+
+    const inp = document.createElement('sp-textfield');
+    inp.setAttribute('multiline', '');
+    inp.setAttribute('quiet', '');
+    inp.value = value;
+
+    const recBtn = document.createElement('sp-action-button');
+    recBtn.setAttribute('size', 's');
+    recBtn.setAttribute('quiet', '');
+    recBtn.textContent = '♻';
+    recBtn.title = 'Reuse ' + title;
+    recBtn.addEventListener('click', () => onRecycle(inp.value));
+
+    // const cpyBtn = document.createElement('sp-action-button');
+    // cpyBtn.setAttribute('size', 's');
+    // cpyBtn.setAttribute('quiet', '');
+    // cpyBtn.textContent = '📋';
+    // cpyBtn.title = 'Copy ' + title;
+    // cpyBtn.addEventListener('click', () => navigator.clipboard.writeText(inp.value));
+
+    row.append(inp, recBtn);
+
+    body.appendChild(row);
+  } else {
+    const row = document.createElement('div');
+    row.className = 'tile-row footer';
+    const btn = document.createElement('sp-button');
+    btn.setAttribute('size', 's');
+    btn.setAttribute('variant', 'accent');
+    btn.textContent = value;
+    btn.addEventListener('click', onRecycle);
+    row.appendChild(btn);
+    body.appendChild(row);
+  }
+
+  hdr.addEventListener('click', () => {
+  const collapsed = tile.classList.toggle('collapsed');
+  hdr.querySelector('span').textContent = collapsed ? '▼' : '▲';
+  collapseState[title] = collapsed;
+  localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapseState));
+});
+
+  tile.append(hdr, body);
+  root.appendChild(tile);
+}
+
+/* ---------- collapse / uncollapse all ---------- */
+document.getElementById('toggleAllBtn').addEventListener('click', () => {
+  const tiles = document.querySelectorAll('.tile');
+  const collapsed = tiles[0]?.classList.contains('collapsed') ?? false;
+  tiles.forEach(t => {
+    if (collapsed) t.classList.remove('collapsed');
+    else t.classList.add('collapsed');
+  });
+  document.getElementById('toggleAllBtn').textContent = collapsed ? 'Collapse' : 'Uncollapse';
+});
+
+
+document.getElementById('prmUseAll').addEventListener('click', useAll);
+
+
 module.exports = {
     readPromptFile,
     savePrompt,
     loadPrompt,
     setLayerPromptData,
     getLayerPromptData,
-    removeLayerPromptData
+    removeLayerPromptData,
+    hydratePromptInfo,
+    recyclePrompt,
+    recycleWorkflow,
+    useAll,
+    getCurrentLayerData,
+    renderPromptTiles
 };

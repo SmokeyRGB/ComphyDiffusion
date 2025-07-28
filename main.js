@@ -541,7 +541,18 @@ entrypoints.setup({
 
         workflowEditor: {
             show(body) {
-                body.insertAdjacentHTML('beforeend', '<div id="workflowEditorRoot"style="padding:10px"></div>');
+                body.insertAdjacentHTML('beforeend', `
+                    <div id="workflowEditorHeaderBar" style="  display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 6px 8px;
+                    background: #2a2a2a;
+                    border-radius: 0 0 6px 6px;">
+                        <sp-action-button id="toggleAllBtnWrkflw" size="s" quiet>Uncollapse</sp-action-button>
+                        <sp-button id="Restore" size="s" style="font-size: 10px;" variant="accent">Use All</sp-button>
+                    </div>
+                    <div id="workflowEditorRoot"style="padding:10px"></div>
+                    `);
                 workflowEditor.initPanel();
             },
             invokeMenu(id) {
@@ -723,72 +734,14 @@ document.getElementById("cfg").addEventListener('input', () => promptHandling.sa
 // HIDE / SHOW ADVANCED PROMPTS
 document.getElementById("advPromptingButton").addEventListener('click', ui.hideAdvPrompts);
 
-// PROMPT INFORMATION WINDOW /////////////////////////
+// ------- PROMPT INFO PANEL WIRING -------
 
-document.getElementById("getEmbeddedPromptInfoButton").addEventListener('click', getEmbeddedPrompt);
+const promptHandeling = require('./js/prompt_handeling.js');
+const refreshPromptPanel = async () => {
+  const data = await promptHandling.getCurrentLayerData();
+  promptHandeling.renderPromptTiles(data);
+};
 
-// Copy Buttons
-document.getElementById("promptInfoCopyPositiveButton").addEventListener('click', function (event) {
-    let value = document.getElementById('posPromptInfo').value;
-    utils.copyToClipboard(value)
-});
-document.getElementById("promptInfoCopyNegativeButton").addEventListener('click', function (event) {
-    let value = document.getElementById('negPromptInfo').value;
-    utils.copyToClipboard(value)
-});
-document.getElementById("promptInfoCopySeedButton").addEventListener('click', function (event) {
-    let value = document.getElementById('seedPromptInfo').value;
-    utils.copyToClipboard(value)
-});
-document.getElementById("promptInfoCopyStepsButton").addEventListener('click', function (event) {
-    let value = document.getElementById('stepsPromptInfo').value;
-    utils.copyToClipboard(value)
-});
-document.getElementById("promptInfoCopyCfgButton").addEventListener('click', function (event) {
-    let value = document.getElementById('cfgPromptInfo').value;
-    utils.copyToClipboard(value)
-});
-
-// Recycle Buttons
-document.getElementById("promptInfoRecyclePositiveButton").addEventListener('click', function (event) {
-    let value = document.getElementById('posPromptInfo').value;
-    document.getElementById("positivePrompt").value = value
-    promptHandling.savePrompt();
-});
-document.getElementById("promptInfoRecycleNegativeButton").addEventListener('click', function (event) {
-    let value = document.getElementById('negPromptInfo').value;
-    document.getElementById("negativePrompt").value = value
-    promptHandling.savePrompt();
-});
-document.getElementById("promptInfoRecycleSeedButton").addEventListener('click', function (event) {
-    let value = document.getElementById('seedPromptInfo').value;
-    document.getElementById("seed").value = value
-    promptHandling.savePrompt();
-});
-document.getElementById("promptInfoRecycleStepsButton").addEventListener('click', function (event) {
-    let value = document.getElementById('stepsPromptInfo').value;
-    document.getElementById("steps").value = value
-    promptHandling.savePrompt();
-});
-document.getElementById("promptInfoRecycleCfgButton").addEventListener('click', function (event) {
-    let value = document.getElementById('cfgPromptInfo').value;
-    document.getElementById("cfg").value = value
-    promptHandling.savePrompt();
-});
-
-document.getElementById("useAllExtractedPromptInfo").addEventListener('click', function (event) {
-    let negative = document.getElementById('negPromptInfo').value;
-    let positive = document.getElementById('posPromptInfo').value;
-    let seed = document.getElementById('seedPromptInfo').value;
-    let steps = document.getElementById('stepsPromptInfo').value;
-    let cfg = document.getElementById('cfgPromptInfo').value;
-
-    document.getElementById("positivePrompt").value = positive
-    document.getElementById("negativePrompt").value = negative
-    document.getElementById("seed").value = seed
-    document.getElementById("steps").value = steps
-    document.getElementById("cfg").value = cfg
-
-    promptHandling.savePrompt();
-});
+require('photoshop').action.addNotificationListener([{ event: 'select' }], refreshPromptPanel);
+refreshPromptPanel();   // initial paint
 

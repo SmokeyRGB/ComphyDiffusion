@@ -198,7 +198,7 @@
       "id": "workflowEditor",
       "label": { "default": "Workflow Editor ✏️" },
       "minimumSize": { "width": 440, "height": 300 },
-      "maximumSize": { "width": 1920, "height": 1080},
+      "maximumSize": { "width": 440, "height": 1080},
       "preferredFloatingSize": { "width": 440, "height": 600 },
       "icons": [
         {
@@ -225,20 +225,20 @@
       "type": "panel",
       "id": "promptInfo",
       "minimumSize": {
-        "width": 250,
-        "height": 280
+        "width": 440,
+        "height": 300
       },
       "maximumSize": {
-        "width": 350,
-        "height": 280
+        "width": 440,
+        "height": 1080
       },
       "preferredDockedSize": {
-        "width": 250,
-        "height": 280
+        "width": 440,
+        "height": 300
       },
       "preferredFloatingSize": {
-        "width": 250,
-        "height": 280
+        "width": 440,
+        "height": 300
       },
       "icons": [
         {
