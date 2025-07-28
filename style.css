@@ -292,4 +292,93 @@ body {
     height: 100%;
     border: none;
   }
+
+
+/* Prompt Information Panel Styles */
+/* ---------- Prompt-Info modern tiles ---------- */
+.tile-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 10px;
+  overflow-y: auto;
+}
+
+.tile {
+  background: #2e2e2e;
+  border: 1px solid #444;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color .15s ease;
+}
+
+.tile:hover {
+  border-color: #177fff;
+}
+
+.tile-header {
+  background: #1b1b1bff;
+  color: #177fffff;
+  padding: 6px 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tile-header span {
+  font-size: 8px;
+}
+
+.tile-body {
+  padding: 8px;
+  display: none;
+}
+
+.tile:not(.collapsed) .tile-body {
+  display: block;
+}
+
+.tile-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.tile-row label {
+  color: #ccc;
+  flex: 0 0 70px;
+}
+
+.tile-row sp-textfield {
+  flex: 1;
+}
+
+.tile-row sp-action-button {
+  flex: 0 0 28px;
+}
+
+.tile-row.footer {
+  justify-content: center;
+  margin-top: 6px;
+}
+
+/* Header bar */
+#promptHeaderBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: #2a2a2a;
+  border-radius: 0 0 6px 6px;
+}
+
+/* Spacer between CFG and Workflow */
+.tile-spacer {
+    height: 2px;
+    margin: 4px;
+    background: rgb(52 52 52);
+}
   
