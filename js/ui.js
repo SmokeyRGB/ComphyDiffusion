@@ -121,7 +121,7 @@ document.getElementById("advPromptingButton").addEventListener('click', hideAdvP
 // Updated helper to attach zoom and pan events using mouse events for Spectrum (Adobe UXP)
 // In attachZoomPanListeners we use a zoomLevel constant.
 // For clarity, we define helper functions below.
-const ZOOM_LEVEL = 2.5;
+const ZOOM_LEVEL = 3;
 
 /* --- clamp helper --- */
 function clamp(v, min, max) {
@@ -238,17 +238,42 @@ function attachZoomPanListeners(img) {
 /* window resize → keep fit consistent */
 window.addEventListener('resize', () => {
   const img = document.querySelector('#generationPreview img');
-  if (img) {
-    const nw = Number(img.dataset.normalW);
-    const nh = Number(img.dataset.normalH);
-    const scale = Number(img.dataset.scale || 1);
-    const cw = img.parentElement.clientWidth;
-    const ch = img.parentElement.clientHeight;
+  if (!img) return;
 
-    img.style.width  = nw * scale + 'px';
-    img.style.height = nh * scale + 'px';
+  const natW = img.naturalWidth;
+  const natH = img.naturalHeight;
+  if (!natW) return;
 
-    const clamped = clampOffsets(parseFloat(img.style.left), parseFloat(img.style.top), cw, ch, nw * scale, nh * scale);
+  const cw = img.parentElement.clientWidth;
+  const ch = img.parentElement.clientHeight;
+
+  /* new base size (contain-fit) */
+  const baseScale = Math.min(cw / natW, ch / natH);
+  const newW = natW * baseScale;
+  const newH = natH * baseScale;
+
+  /* store new normal dimensions */
+  img.dataset.normalW = natW;
+  img.dataset.normalH = natH;
+
+  const currentZoom = Number(img.dataset.scale || 1);
+
+  img.style.width  = newW * currentZoom + 'px';
+  img.style.height = newH * currentZoom + 'px';
+
+  if (currentZoom === 1) {
+    /* un-zoomed → center */
+    img.style.left = (cw - newW) / 2 + 'px';
+    img.style.top  = (ch - newH) / 2 + 'px';
+  } else {
+    /* keep current offset, just clamp it */
+    const clamped = clampOffsets(
+      parseFloat(img.style.left) || 0,
+      parseFloat(img.style.top)  || 0,
+      cw, ch,
+      newW * currentZoom,
+      newH * currentZoom
+    );
     img.style.left = clamped.offsetX + 'px';
     img.style.top  = clamped.offsetY + 'px';
   }
@@ -346,22 +371,6 @@ const updateTempPreview = async (previewData) => {
   // keep left/top untouched → no jump
 };
 
-const updateFinalPreview = async (dataFolderPath) => {
-    try {
-        const fs = require('uxp').storage.localFileSystem;
-        // Get the preview image file.
-        const previewFile = await dataFolderPath.getEntry("temp_image_preview.png");
-        // Get the preview <img> element (assumes it exists inside an element with id 'generationPreview')
-        const previewElement = document.querySelector('#generationPreview img');
-        if (previewElement) {
-            // Set the image source to the native path of the file.
-            previewElement.src = 'file://' + previewFile.nativePath;
-        }
-    } catch (e) {
-        console.error("Error updating final preview:", e);
-    }
-};
-
 const updateFinalPreviewFromData = async (base64Data) => {
     const img_container = document.getElementById("generationPreview");
     let img_element = img_container.querySelector('img');
@@ -370,6 +379,9 @@ const updateFinalPreviewFromData = async (base64Data) => {
         img_container.appendChild(img_element);
     }
     img_element.onload = () => {
+        if (img_element.dataset.loaded) return;
+        img_element.dataset.loaded = 'true';
+
         let scale = Math.min(
             img_container.clientWidth / img_element.naturalWidth,
             img_container.clientHeight / img_element.naturalHeight
@@ -514,6 +526,5 @@ module.exports = {
     resetQueueButton,
     updateGenerationStatus,
     getGenerationState,
-    updateFinalPreview,
     updateFinalPreviewFromData
 };
