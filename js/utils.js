@@ -112,12 +112,17 @@ const fixComfyUILatentPreview = async (comfyUIDir, previewDir) => {
     }
 
     // 3. Code we want to insert
-    const marker = 'preview_image = preview_bytes[1]';
+    const marker = 'preview_bytes = previewer.decode_latent_to_preview_image(preview_format, x0)';
     const snippet = [
+      '            # Save preview bytes to file',
+      '            try:',
+      '                preview_image = preview_bytes[1]',
       '                import os',
       '                preview_path = os.path.join(previewDir, f"preview.{preview_format.lower()}")',
       '                os.makedirs(' + JSON.stringify(previewDir) + ', exist_ok=True)',
-      '                preview_image.save(preview_path)'
+      '                preview_image.save(preview_path)',
+      '            except:',
+      '                print("Could not save preview")'
     ].join('\n');
 
     // 4. Already OK?
