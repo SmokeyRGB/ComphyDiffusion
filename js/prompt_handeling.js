@@ -1,6 +1,143 @@
 const { localFileSystem: fs } = require('uxp').storage;
+const { XMPMeta, XMPConst } = require('uxp').xmp;
+const bp = require("photoshop").action.batchPlay;
+const psCore = require("photoshop").core;
 
+// Custom XMP namespace for our plugin (keeping original name)
+const NS_COMPHYDIFFUSION = "http://ns.comphydiffusion.com/xmp/1.0/";
+let namespaceRegistered = false;
 
+// GETTER for document XMP
+const getDocumentXMP = () => {
+    return bp(
+        [
+            {
+                _obj: "get",
+                _target: {
+                    _ref: [
+                        { _property: "XMPMetadataAsUTF8" },
+                        { _ref: "document", _enum: "ordinal", _value: "targetEnum" },
+                    ],
+                },
+            },
+        ],
+        { synchronousExecution: true }
+    )[0].XMPMetadataAsUTF8;
+};
+
+// SETTER for document XMP
+const setDocumentXMP = async (xmpString) => {
+    try {
+        await psCore.executeAsModal(
+            async () =>
+                await bp(
+                    [
+                        {
+                            _obj: "set",
+                            _target: [
+                                { _property: "XMPMetadataAsUTF8" },
+                                { _ref: "document", _enum: "ordinal", _value: "targetEnum" },
+                            ],
+                            to: {
+                                _obj: "XMPMetadataAsUTF8",
+                                XMPMetadataAsUTF8: xmpString,
+                            },
+                        },
+                    ],
+                    { synchronousExecution: false }
+                ),
+            { commandName: "Setting XMP..." }
+        );
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+/**
+ * Stores prompt and workflow data for a specific layer in document XMP
+ * @param {string} layerId - The ID of the layer
+ * @param {object} promptData - Prompt data to store
+ * @param {object} workflowData - Workflow data to store
+ */
+async function setLayerPromptData(layerId, promptData, workflowData) {
+    try {
+        // Check and register namespace once
+        if (!namespaceRegistered) {
+            const existingURI = XMPMeta.getNamespaceURI("pd");
+            if (!existingURI) {
+                XMPMeta.registerNamespace(NS_COMPHYDIFFUSION, "pd");
+            }
+            namespaceRegistered = true;
+        }
+
+        const xmpString = getDocumentXMP();
+        const meta = new XMPMeta(xmpString);
+
+        // Store prompt and workflow as JSON strings
+        if (promptData) {
+            meta.setProperty(NS_COMPHYDIFFUSION, `Layer_${layerId}_Prompt`, JSON.stringify(promptData));
+        }
+        if (workflowData) {
+            meta.setProperty(NS_COMPHYDIFFUSION, `Layer_${layerId}_Workflow`, JSON.stringify(workflowData));
+        }
+
+        await setDocumentXMP(meta.serialize());
+        return true;
+    } catch (error) {
+        console.error("Error saving layer prompt data to XMP:", error);
+        return false;
+    }
+}
+
+/**
+ * Retrieves prompt and workflow data for a specific layer from document XMP
+ * @param {string} layerId - The ID of the layer
+ * @returns {object} Object containing prompt and workflow data or null if not found
+ */
+function getLayerPromptData(layerId) {
+    try {
+        const xmpString = getDocumentXMP();
+        const meta = new XMPMeta(xmpString);
+        
+        const result = {};
+        const promptJson = meta.getProperty(NS_COMPHYDIFFUSION, `Layer_${layerId}_Prompt`);
+        const workflowJson = meta.getProperty(NS_COMPHYDIFFUSION, `Layer_${layerId}_Workflow`);
+
+        if (promptJson) {
+            result.prompt = JSON.parse(promptJson);
+        }
+        if (workflowJson) {
+            result.workflow = JSON.parse(workflowJson);
+        }
+
+        return Object.keys(result).length ? result : null;
+    } catch (error) {
+        console.error("Error reading layer prompt data from XMP:", error);
+        return null;
+    }
+}
+
+/**
+ * Removes prompt and workflow data for a specific layer from document XMP
+ * @param {string} layerId - The ID of the layer
+ */
+async function removeLayerPromptData(layerId) {
+    try {
+        const xmpString = getDocumentXMP();
+        const meta = new XMPMeta(xmpString);
+        
+        meta.deleteProperty(NS_COMPHYDIFFUSION, `Layer_${layerId}_Prompt`);
+        meta.deleteProperty(NS_COMPHYDIFFUSION, `Layer_${layerId}_Workflow`);
+
+        await setDocumentXMP(meta.serialize());
+        return true;
+    } catch (error) {
+        console.error("Error removing layer prompt data from XMP:", error);
+        return false;
+    }
+}
+
+// Maintain existing file-based functions exactly as they were
 async function readPromptFile() {
     try {
         let promptFile = await dataFolderPath.getEntry('prompt.json');
@@ -9,11 +146,11 @@ async function readPromptFile() {
             data = JSON.parse(data);
         } catch (e) {
             console.log("Error parsing JSON, attempting to fix: " + e);
-            data = data.replace(/}\s*$/, ''); // Remove the extra closing bracket
+            data = data.replace(/}\s*$/, '');
             try {
                 data = JSON.parse(data);
-                console.log("Fixed JSON: " + JSON.stringify(data));}
-            catch (e) {
+                console.log("Fixed JSON: " + JSON.stringify(data));
+            } catch (e) {
                 console.log("Error whilst fixing JSON: " + e);
             }
         }
@@ -48,8 +185,6 @@ async function savePrompt() {
     if (cfg == '') {
         cfg = 6;
     }
-
-    console.log('Got prompt from UI Input: \nPositive: ' + positive_prompt + '\nNegative: ' + negative_prompt + '\nSeed: ' + seed);
 
     try {
         const promptFile = await readPromptFile();
@@ -90,5 +225,8 @@ async function loadPrompt() {
 module.exports = {
     readPromptFile,
     savePrompt,
-    loadPrompt
+    loadPrompt,
+    setLayerPromptData,
+    getLayerPromptData,
+    removeLayerPromptData
 };

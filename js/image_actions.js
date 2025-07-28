@@ -425,8 +425,11 @@ const insertAsLayer = async (insertAs, dataFolderPath) => {
     await renameLayer(layerName);
     await makeSmartObject();
 
+    // load JSON workflow from workflow_path
+    let workflowData = await utils.loadWorkflow(workflow_path);
+
     // WIP: Embed metadata
-    // await embedMetadata(prompt['positive'])
+    prompt_handeling.setLayerPromptData(app.activeDocument.activeLayers[0].id, prompt, workflowData);
 
     await loadSelection();
 
@@ -469,6 +472,10 @@ const insertAsLayer = async (insertAs, dataFolderPath) => {
     }
 
     documentChanged = true;
+    console.log("Insertion completed.");
+    metadata = prompt_handeling.getLayerPromptData(app.activeDocument.activeLayers[0].id);
+    console.log("Metadata for layerID: " + app.activeDocument.activeLayers[0].id + " is: " + metadata);
+    console.log(metadata.prompt)
 };
 
 /* Open Selected Smart Object*/
@@ -939,22 +946,107 @@ const encodeAndSavePNG = async (rgbaBuffer, width, height, filePath) => {
     try {
         console.log("Encoding PNG with UPNG.js...", { width, height, bufferLength: rgbaBuffer.length });
 
+        start = performance.now();
+
         // Encode PNG using bundled UPNG.js
         const pngData = await encodeToPNG_UPNG(rgbaBuffer, width, height);
+
+        console.log("PNG encoded in", performance.now() - start, "ms");
 
         // Get UXP local filesystem
         const uxp = require("uxp").storage.localFileSystem;
 
         // Create PNG file in the designated folder
+        start = performance.now();
         console.log("Saving PNG to:", dataFolderPath.nativePath);
         const saveFile = await fs.createEntryWithUrl(dataFolderPath.nativePath + "/"+filePath, { overwrite: true });
 
         // Write the encoded PNG data to the file
         await saveFile.write(pngData, { append: false });
 
+        console.log("PNG saved successfully in", performance.now() - start, "ms:", saveFile.nativePath);
+
         console.log("PNG saved successfully:", saveFile.nativePath);
     } catch (error) {
         console.error("Error saving PNG:", error);
+    }
+};
+
+/**
+ * Encodes RGBA data to PNG format using Imaging API and temporary document
+ *
+ * @param {Uint8Array} rgbaBuffer - The RGBA buffer containing masked image data
+ * @param {number} width - The width of the image
+ * @param {number} height - The height of the image
+ * @param {string} filePath - The file path where the PNG will be saved
+ * @returns {Promise<void>}
+ */
+const encodeAndSavePNG_WIP = async (rgbaBuffer, width, height, filePath) => {
+    let tempDocId = null;
+    let imageData = null;
+    const initialDocs = app.documents.map(doc => ({ id: doc._id, doc }));
+    
+    try {
+        const start = performance.now();
+        const storage = require("uxp").storage;
+        
+        // Create image data from buffer
+        imageData = await imaging.createImageDataFromBuffer(rgbaBuffer, {
+            width,
+            height,
+            components: 4, // RGBA
+            colorSpace: "RGB", // Lowercase
+            colorProfile: "sRGB IEC61966-2.1",
+            chunky: true
+        });
+
+        // Create temporary document (no parameters needed)
+        tempDocId = await photoshop.core.createTemporaryDocument({documentID: app.activeDocument.id});
+        console.log("Created Temporary Document")
+        const newDocs = app.documents.map(doc => ({ id: doc._id, doc }));
+        const tempDoc = newDocs.find(d => !initialDocs.map(doc => doc.id).includes(d.id)).doc;
+        console.log("Got Temporary Document Reference: ", tempDoc);
+        console.log("Layers in Temporary Document: ", tempDoc.layers);
+
+
+        // Put pixels into temporary document
+        try {
+            await imaging.putPixels({
+                documentID: tempDocId,
+                layerID: tempDoc.layers[0].id,
+                imageData: imageData,
+                replace: true
+            });
+            console.log("Put Pixels into Temporary Document")
+        }
+        catch (error) {
+            console.error("Error putting pixels into temporary document:", error);
+            throw error;
+        }
+        
+
+        // Create file reference
+        const saveFile = await storage.localFileSystem.getFileForSaving(filePath);
+        
+        // Save as PNG with correct options
+        await tempDoc.saveAs(saveFile, {
+            format: storage.formats.png,
+            pngOptions: {
+                compression: 6, // 0-9 (Photoshop standard)
+                interlaced: false
+            }
+        }, false); // asCopy = false
+
+        console.log(`PNG saved in ${performance.now() - start}ms: ${filePath}`);
+    } catch (error) {
+        console.error("Error saving PNG:", error);
+        throw error; // Re-throw for caller handling
+    } finally {
+        // Clean up resources
+        imageData?.dispose();
+        if (tempDocId) {
+            await photoshop.core.closeDocument(tempDocId, { saving: false });
+        }
     }
 };
 
@@ -984,30 +1076,52 @@ const runNewExport = async (dataFolderPath) => {
     await photoshop.core.executeAsModal(async () => {
         try {
             // 1. Get the selection mask (if any)
-            const mask = await getSelectionMask();
+            let start = performance.now();
+            let mask = await getSelectionMask();
+            console.log("Selection mask retrieved in", performance.now() - start, "ms");
 
             // 2. Extract document pixel data (PhotoshopImageData)
+            start = performance.now();
             const imageData = await extractDocumentPixels();
+            console.log("Extracted document pixels in", performance.now() - start, "ms");
+
 
             // 3. Retrieve raw pixel buffer
+            start = performance.now();
             const { width, height, rgbaData } = await extractRGBAfromPSImageData(imageData);
+            console.log("Extracted RGBA buffer in", performance.now() - start, "ms");
 
-            console.log("Extracted RGBA buffer:", rgbaData);
+            //console.log("Extracted RGBA buffer:", rgbaData);
 
             // 4. Apply selection mask if a valid selection exists.
+            start = performance.now();
             let maskedBuffer = null;
+            if (mask == null)   {
+                //create a mask with all pixels selected
+                mask = new Array(height);
+                for (let i = 0; i < height; i++) {
+                    mask[i] = new Array(width).fill(255);
+                }
+            }
             if (mask) {
                 maskedBuffer = applySelectionMask(rgbaData, mask, width, height);
             }
+            console.log("Applied selection mask in", performance.now() - start, "ms");
 
             // 5. Encode and save images.
+            start = performance.now();
             await encodeAndSaveJPEG(imageData, 'temp_image_rgb.jpg');
+            console.log("JPEG Export completed in", performance.now() - start, "ms");
+
+            start = performance.now();
             if (maskedBuffer) {
                 await encodeAndSavePNG(maskedBuffer, width, height, 'temp_image_inpaint.png');
             }
             else {
+
                 await fastSavePng(rgbaData, width, height, 'temp_image_inpaint.png');
             }
+            console.log("PNG Export completed in", performance.now() - start, "ms");
 
             console.log("New export completed successfully.");
         } catch (error) {
