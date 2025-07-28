@@ -39,7 +39,7 @@
         {
           "width": 32,
           "height": 32,
-          "path": "icons/icon_D.png",
+          "path": "icons/icon_vanilla_D.png",
           "scale": [
             1,
             2
@@ -70,7 +70,7 @@
         }
       ],
       "label": {
-        "default": "Photoshop to ComfyUI by SmokeyRGB"
+        "default": "ComphyPhotoshop by SmokeyRGB"
       }
     },
 
@@ -130,7 +130,7 @@
         }
       ],
       "label": {
-        "default": "Mini-Queue"
+        "default": "Prompt"
       }
     },
 
@@ -157,12 +157,13 @@
         {
           "width": 32,
           "height": 32,
-          "path": "icons/icon_D.png",
+          "path": "icons/workflow.png",
           "scale": [
             1,
             2
           ],
           "theme": [
+            "all",
             "dark",
             "darkest"
           ],
@@ -173,7 +174,7 @@
         {
           "width": 32,
           "height": 32,
-          "path": "icons/icon_N.png",
+          "path": "icons/workflow.png",
           "scale": [
             1,
             2
@@ -188,7 +189,7 @@
         }
       ],
       "label": {
-        "default": "Workflow Editor"
+        "default": "ComfyUI Webview 🌐"
       }
     },
 
@@ -197,7 +198,26 @@
       "id": "workflowEditor",
       "label": { "default": "Workflow Editor ✏️" },
       "minimumSize": { "width": 440, "height": 300 },
-      "preferredFloatingSize": { "width": 440, "height": 600 }
+      "maximumSize": { "width": 1920, "height": 1080},
+      "preferredFloatingSize": { "width": 440, "height": 600 },
+      "icons": [
+        {
+          "width": 32,
+          "height": 32,
+          "path": "icons/workflow_options.png",
+          "scale": [1, 2],
+          "theme": ["dark", "darkest"],
+          "species": ["generic"]
+        },
+        {
+          "width": 32,
+          "height": 32,
+          "path": "icons/workflow_options.png",
+          "scale": [1, 2],
+          "theme": ["lightest", "light"],
+          "species": ["generic"]
+        }
+      ]
     },
 
 
@@ -224,7 +244,7 @@
         {
           "width": 32,
           "height": 32,
-          "path": "icons/icon_D.png",
+          "path": "icons/promptInfo.png",
           "scale": [
             1,
             2
@@ -240,7 +260,7 @@
         {
           "width": 32,
           "height": 32,
-          "path": "icons/icon_N.png",
+          "path": "icons/promptInfo.png",
           "scale": [
             1,
             2
