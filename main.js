@@ -472,6 +472,10 @@ entrypoints.setup({
                     case "connectComfyUIWebsocket":
                         websocketModule.connectComfyUIWebsocket(pluginFolderPath);
                         break;
+                    case "getLayerXMP":
+                        let promptData = promptHandling.getLayerPromptData(app.activeDocument.activeLayers[0].id);
+                        console.log("Prompt Data: ", promptData);
+                        break;
 
                 }
                 //handleFlyout(id);
@@ -490,6 +494,7 @@ entrypoints.setup({
                             { id: "pluginReload", label: "Reload plugin" },
                             { id: "createSelectionChannel", label: "Fix not-saving selection" },
                             { id: "connectComfyUIWebsocket", label: "Connect to ComfyUIWebsocket" },
+                            { id: "getLayerXMP", label: "Get Layers XMP information" },
                         ]
                 },
             ],
