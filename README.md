@@ -1,14 +1,12 @@
-Below is an improved, clear, and updated version of your README that reflects best practices—especially for installation via the UXP Developer Tools.
+# ComPHy
 
----
+**ComPHy** is a Photoshop plugin that seamlessly connects Adobe Photoshop with a running ComfyUI server. It lets you generate images from text prompts, modify them using inpainting and perform image-to-image processing directly inside Photoshop—making AI-assisted creative workflows faster and more intuitive.
 
-# ComphyDiffusion
-
-**ComphyDiffusion** is a Photoshop plugin that seamlessly connects Adobe Photoshop with a running ComfyUI server. It lets you generate images from text prompts, modify them using inpainting and perform image-to-image processing directly inside Photoshop—making AI-assisted creative workflows faster and more intuitive.
-
+![image](images/ComphyDiffusion.gif)
 ---
 
 ## Features
+
 - **Image Inpainting:** Create a selection and add generated content directly to Photoshop.
 - **Real-Time Progress Updates:** A live WebSocket connection provides immediate progress feedback during image generation.
 - **Workflow Support:** Use your own workflow to fit your style. Full customization.
@@ -31,7 +29,7 @@ git clone https://github.com/SmokeyRGB/ComphyDiffusion.git
 
 ### 2. Install Dependencies
 
-Make sure you have [Node.js]() installed, if you haven't already.
+Make sure you have [Node.js](https://nodejs.org/en/download) installed, if you haven't already.
 
 Afterwards run `install.bat` in the plugins folder.
 This will install all python and javascript dependancies.
@@ -75,7 +73,9 @@ The plugin will confirm this automatically when you finished setting it up. (Ref
   **⚠ Workflows MUST be exported using [Workflow]->[Export (API)] inside ComfyUI to work! If you're unsure read more [here](#faq)**
 
 - **Output:**  
-  Once the generation completes, images are saved automatically in the `output_images` folder.
+  Once the generation completes, you can choose between three different options to insert the result.
+  Hover over the main panel (showing the Preview). On the top
+
 
 ---
 
@@ -84,18 +84,20 @@ The plugin will confirm this automatically when you finished setting it up. (Ref
   It seems the `latent_preview.py` file in your ComfyUI home directory does not save out preview files.
   Usually, the plugin should correct this itself if you have set the ComfyUI path in the settings.
 
-  First, we need to find your plugins data directory. Click the flyout menu in the preview panel, and click [Debug Options]->[Open the plugins data directory]. You will be prompted if you want to open the folder.
+  First, check in the plugin settings if the ComfyUI path is set. If not, pick the path where you installed your ComfyUI.
+
+  If that does not work, we need to first find your plugins data directory. Click the flyout menu in the preview panel, and click `[Debug Options]->[Open the plugins data directory]`. You will be prompted if you want to open the folder.
 
   Copy its path.
 
   Then, open up `.../ComfyUI/latent_preview.py` and search for the line `preview_image = preview_bytes[1]`.
 
-  Below this line, paste (replacing {PluginDataPath} with your path):
-  ```
-                import os
-                preview_path = "{PluginDataPath}/Previews/", f"preview.{preview_format.lower()}"
-                os.makedirs("{PluginDataPath}/Previews/", exist_ok=True)
-                preview_image.save(preview_path)
+  Below this line, paste the following code, replacing {PluginDataPath} with the path you just copied.
+  ```py
+  import os
+  preview_path = "{PluginDataPath}/Previews/", f"preview.{preview_format.lower()}"
+  os.makedirs("{PluginDataPath}/Previews/", exist_ok=True)
+  preview_image.save(preview_path)
   ```
 
   It should work now.
