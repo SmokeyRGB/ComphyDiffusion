@@ -18,7 +18,7 @@
     },
     {
       "type": "panel",
-      "id": "vanilla",
+      "id": "genPreviewPanel",
       "minimumSize": {
         "width": 360,
         "height": 370
@@ -78,7 +78,7 @@
 
     {
       "type": "panel",
-      "id": "popout",
+      "id": "promptPanel",
       "minimumSize": {
         "width": 350,
         "height": 153
@@ -130,7 +130,7 @@
         }
       ],
       "label": {
-        "default": "Prompt"
+        "default": "📝"
       }
     },
 

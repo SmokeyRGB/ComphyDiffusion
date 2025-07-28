@@ -448,14 +448,14 @@ document.getElementById("queueButton").addEventListener('mouseout', (event) => {
 // ENTRYPOINT SETUP
 entrypoints.setup({
     panels: {
-        vanilla: {
+        genPreviewPanel: {
             show(body) {
                 let content = document.getElementById('MainPanel')
                 body.appendChild(content)
                 // put any initialization code for your plugin here.
             },
             invokeMenu(id) {
-                const { menuItems } = entrypoints.getPanel("vanilla");
+                const { menuItems } = entrypoints.getPanel("genPreviewPanel");
                 console.log("Clicked flyout menu: " + id)
 
                 switch (id) {
@@ -508,25 +508,24 @@ entrypoints.setup({
                 },
             ],
         },
-        popout: {
+        promptPanel: {
             show(body) {
                 let content = document.getElementById('miniQueuePanel')
                 body.appendChild(content)
             },
-            invokeMenu(id) {
+            async invokeMenu(id) {
                 switch (id) {
                     case "cancelQueue":
                         cancel_queue();
                         break;
-                    case "pickWorkflow":
-                        pickWorkflow();
+                    case "setGenCompleted":
+                        await ui.updateGenerationStatus("completed");
                         break;
                 }
             },
             menuItems: [
-                { id: "pickWorkflow", label: "Select a workflow to run (experimental)" },
                 { id: "cancelQueue", label: "Cancel Queue 🚫" },
-
+                { id: "setGenCompleted", label: "Set Generation Completed" }
             ]
         },
 
@@ -596,7 +595,7 @@ entrypoints.setup({
 window.require('photoshop').core.suppressResizeGripper(
     {
         "type": "panel",
-        "target": "vanilla",
+        "target": "genPreviewPanel",
         "value": true
     })
 window.require('photoshop').core.suppressResizeGripper(
@@ -608,7 +607,7 @@ window.require('photoshop').core.suppressResizeGripper(
 window.require('photoshop').core.suppressResizeGripper(
     {
         "type": "panel",
-        "target": "popout",
+        "target": "promptPanel",
         "value": true
     })
 window.require('photoshop').core.suppressResizeGripper(
