@@ -7,6 +7,7 @@
 
 ## Features
 
+**Implemented:**  
 - **Image Inpainting:** Create a selection and add generated content directly to Photoshop.
 - **Real-Time Progress Updates:** A live WebSocket connection provides immediate progress feedback during image generation.
 - **Workflow Support:** Use your own workflow to fit your style. Full customization.
@@ -14,7 +15,8 @@
 - **ComfyUI Webview:** Manage your ComfyUI-Backend live inside Photoshop.
 - **Prompt/Workflow Recovery:** Forgot what prompt/workflow you used to generate an asset? No worries - you can recover all information used from the Layer.
 
-
+**Planned:**
+- **Batch support:**  Generate multiple assets in one run and choose the one you like best.
 ---
 
 ## Installation
@@ -80,7 +82,7 @@ The plugin will confirm this automatically when you finished setting it up. (Ref
 ---
 
 ## FAQ
-- **I don't get any preview during generation**  
+### I don't get any preview during generation  
   It seems the `latent_preview.py` file in your ComfyUI home directory does not save out preview files.
   Usually, the plugin should correct this itself if you have set the ComfyUI path in the settings.
 
@@ -103,13 +105,15 @@ The plugin will confirm this automatically when you finished setting it up. (Ref
   It should work now.
 
 
-- **Why does the workflow I created not work with the plugin?**  
+### Why does the workflow I created not work with the plugin?  
   You’ll need the API version of your ComfyUI workflow. This is different to the commonly shared JSON version, it does not included visual information about nodes, etc.
   To get your API JSON:
   1. Turn on the "Enable Dev mode Options" from the ComfyUI settings (via the settings icon)
   2. Load your workflow into ComfyUI
   3. Export your API JSON using the "Save (API format)" button
 
+## Known Bugs
+- When changing prompt information before inserting, the changed prompt info is saved, not the prompt you used to generate the asset in the first place
 
 ## Contributing
 
