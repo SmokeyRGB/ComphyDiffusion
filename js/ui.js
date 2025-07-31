@@ -96,6 +96,7 @@ const hideAdvPrompts = async () => {
     negativePrompt.style.display = display;
     steps.style.display = display;
     cfg.style.display = display;
+    seed.style.display = display;
 
     // Toggle prompt border
     document.getElementById("positivePrompt").style.border = advancedPrompting ? "1px solid rgba(66, 158, 89, 0.55)" : "";
@@ -108,6 +109,10 @@ const hideAdvPrompts = async () => {
     seed.size = advancedPrompting ? "s" : "";
     advPromptingBtn.style.height = advancedPrompting ? "25px" : "30px";
     randomizeSeedBtn.style.height = advancedPrompting ? "25px" : "";
+
+    const qb = document.getElementById("queueButton");
+    qb.classList.toggle("seed-look", !advancedPrompting);
+    qb.style.display = advancedPrompting ? "none" : "flex";
 
     // Visual feedback for button
     advPromptingBtn.style.backgroundColor = advancedPrompting ? "#1e1c19" : "";
@@ -233,6 +238,32 @@ function attachZoomPanListeners(img) {
   img.addEventListener('pointerdown', start);
   document.addEventListener('pointermove', move);
   document.addEventListener('pointerup', end);
+}
+
+function renderBatchControls(total) {
+  const nav  = document.getElementById('batchNav');
+  const prev = document.getElementById('batchPrev');
+  const next = document.getElementById('batchNext');
+  const cnt  = document.getElementById('batchCounter');
+
+  if (total <= 1) { nav.style.display = 'none'; return; }
+
+  nav.style.display = 'flex';
+  cnt.textContent = `1 / ${total}`;
+
+  prev.onclick = () => changeBatch(-1);
+  next.onclick = () => changeBatch(1);
+}
+
+async function changeBatch(delta) {
+  const n = batch.images.length;
+  batch.index = (batch.index + delta + n) % n;  // wrap around
+  const data = batch.images[batch.index];
+  await updateFinalPreviewFromData(data);
+  const img = document.querySelector('#generationPreview img');
+  img.dataset.originalWidth = img.style.width || img.getBoundingClientRect().width + 'px';
+  img.dataset.originalHeight = img.style.height || img.getBoundingClientRect().height + 'px';
+  document.getElementById('batchCounter').textContent = `${batch.index + 1} / ${n}`;
 }
 
 /* window resize → keep fit consistent */
@@ -526,5 +557,6 @@ module.exports = {
     resetQueueButton,
     updateGenerationStatus,
     getGenerationState,
+    renderBatchControls,
     updateFinalPreviewFromData
 };

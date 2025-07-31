@@ -722,6 +722,17 @@ const randomizeSeedClick = async (event) => {
     }
     else {
         seedControl.getRandomInt();
+
+        const shinyStart = "radial-gradient( rgba(255, 255, 255, 0) 0%, rgba(255,255,255,0.0) 100%)";
+        const shinyEnd = "radial-gradient( rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.6) 100%)";
+
+        animatePanel(
+            document.getElementById("randomizeSeed"),
+            "background",
+            shinyStart,
+            shinyEnd,
+            1000
+        );
     }
 
 }

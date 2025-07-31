@@ -182,10 +182,12 @@ body {
 }
 
 #queueButtonContainer {
+    display: flex;
     z-index: 999; /* Increase z-index to appear above promptOverlay */
     position: relative;
     width: auto;
     margin: auto;
+    margin-top: 10px;
 }
 
 #queueButton {
@@ -195,6 +197,17 @@ body {
     backdrop-filter: blur(5px);
     z-index: 1000;  /* Ensure the button sits on top */
 }
+
+/* #queueButton.seed-look {
+  flex-grow: 2;
+  min-width: 150px;
+  max-width: 175px;
+  height: 32px;
+  border-radius: 4px;
+  font-size: 13px;
+  text-align: center;
+  line-height: 32px;
+} */
 
     /* Style for insertion options (dropdowns and action buttons) */
 .insertion-options {

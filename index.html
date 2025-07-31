@@ -74,6 +74,11 @@
     </div> -->
 
     <div class="lowerThird" id="lowerThird">
+      <div id="batchNav" style="display:none;justify-content:center;align-items:center;gap:8px;margin:6px 0;">
+        <sp-action-button id="batchPrev" quiet>◀</sp-action-button>
+        <span id="batchCounter">1 / 1</span>
+        <sp-action-button id="batchNext" quiet>▶</sp-action-button>
+      </div>
       <sp-overlay style="position: absolute; top: 20px;">
         <sp-slider id="denoiseSlider" slot="trigger" label="Denoise" indeterminate variant="ramp" max="1.00" min="0.10" value="0.6" step="0.05" format-options="{
           style: 'unit',
@@ -214,15 +219,7 @@
                 <sp-icon id="advPromptingIcon" size="s" name="ui:More"></sp-icon>
             </div>
             <sp-textfield id="steps" placeholder="Steps" style="flex-grow: 1; min-width: 50px; max-width: 50px; display: none;"></sp-textfield>
-            <sp-textfield id="seed" placeholder="Seed" style="flex-grow: 2; min-width: 150px; max-width: 175px;"></sp-textfield>
-            <sp-textfield id="cfg" placeholder="CFG" style="flex-grow: 1; min-width: 50px; max-width: 50px; display: none;"></sp-textfield>
-            <sp-action-button id="randomizeSeed" style="display: flex; align-items: center; justify-content: center;">
-                <a id="randomizeSeedIcon">🎲</a>
-            </sp-action-button>
-        </div>
-            <!-- New queue button container (moved below promptOverlay) -->
-   
-      <div id="queueButtonContainer" >
+                  <div id="queueButtonContainer" >
         <sp-button id="queueButton" variant="cta" style="z-index: 5;" slot="trigger">Queue</sp-button>
         <div id="queueButtonProgress" style="
         position: absolute;
@@ -237,6 +234,21 @@
         border-radius: 16px;">
         </div>
       </div>
+              <sp-textfield id="seed" placeholder="Seed" style="flex-grow: 2; margin-left: auto; margin-right: auto; min-width: 150px; max-width: 175px; display: none;"></sp-textfield>
+            <sp-textfield id="cfg" placeholder="CFG" style="flex-grow: 1; min-width: 50px; max-width: 50px; display: none;"></sp-textfield>
+            <sp-action-button id="randomizeSeed" style="display: flex; align-items: center; justify-content: center;">
+                <a id="randomizeSeedIcon">🎲</a>
+            </sp-action-button>
+        </div>
+
+        <div class="prompt-option" style="align-items: center; width: 100%; justify-content: center;">
+
+          </div>
+
+
+            <!-- New queue button container (moved below promptOverlay) -->
+   
+
 
     </div>
   </div>

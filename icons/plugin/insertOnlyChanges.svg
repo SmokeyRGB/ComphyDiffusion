@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <defs>
+    <pattern id="transparent" width="10" height="10" patternUnits="userSpaceOnUse">
+      <rect width="10" height="10" fill="#fff"/>
+      <rect width="5" height="5" fill="#e0e0e0"/>
+      <rect x="5" y="5" width="5" height="5" fill="#e0e0e0"/>
+    </pattern>
+  </defs>
+  <rect width="100" height="100" fill="url(#transparent)"/>
+
+  <!-- Puzzle piece scaled to fit within 5px margin -->
+  <!-- Original shape bounds: approx 0,0 to 65,55 — scale needed: ~1.38 for 90x90 fit -->
+  <g transform="translate(5, 2) scale(1.38)">
+    <path d="M10 15C5 5 25 5 30 10C35 0 55 5 55 15C65 20 60 40 45 40C40 55 20 50 10 35C0 40 0 25 10 15Z" 
+          fill="#A0D0FF" stroke="#4070FF" stroke-width="1.1" stroke-dasharray="4,2"/>
+  </g>
+
+  <!-- Arrow: half inside the shape, half outside -->
+  <g transform="translate(45, 67)">
+    <path d="M5 15L5 0M0 5L5 15L10 5" stroke="#333" fill="#e0e0e0" stroke-width="1.5"/>
+  </g>
+</svg>

@@ -20,7 +20,7 @@
       "type": "panel",
       "id": "genPreviewPanel",
       "minimumSize": {
-        "width": 360,
+        "width": 350,
         "height": 370
       },
       "maximumSize": {
@@ -32,7 +32,7 @@
         "height": 300
       },
       "preferredFloatingSize": {
-        "width": 360,
+        "width": 350,
         "height": 550
       },
       "icons": [
@@ -70,7 +70,7 @@
         }
       ],
       "label": {
-        "default": "ComphyPhotoshop by SmokeyRGB"
+        "default": "ComPHy"
       }
     },
 
@@ -81,19 +81,19 @@
       "id": "promptPanel",
       "minimumSize": {
         "width": 350,
-        "height": 153
+        "height": 120
       },
       "maximumSize": {
         "width": 350,
-        "height": 153
+        "height": 120
       },
       "preferredDockedSize": {
         "width": 350,
-        "height": 153
+        "height": 120
       },
       "preferredFloatingSize": {
         "width": 350,
-        "height": 153
+        "height": 120
       },
       "icons": [
         {
