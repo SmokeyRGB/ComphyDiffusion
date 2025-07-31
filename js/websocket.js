@@ -8,6 +8,12 @@ const utils = require("./utils");
 let websocket = null;
 let reconnectInterval = 5000; // 5 seconds
 
+const batch = {
+  images: [],          // raw base64 strings
+  index: 0,            // currently shown
+  idPrefix: Date.now() // unique per generation
+};
+
 async function connectComfyUIWebsocket(pluginFolderPath) {
     // If already open or in process of connecting, do not create a new connection.
     if (websocket && (websocket.readyState === WebSocket.OPEN || websocket.readyState === WebSocket.CONNECTING)) {
@@ -88,18 +94,32 @@ async function handleWebsocketMessage(evt) {
         if (response.type === 'progress') {
             ui.display_progress(response.progress);
         } else if (response.status === 'success') {
-            // ...existing success code...
+
             if (!response.images || response.images.length === 0) {
                 console.log("No image data found in response:", response);
                 await ui.updateGenerationStatus("completed");
                 return;
             }
-            const finalImageData = response.images[0].image_data;
-            await saveImageToTempFolder(finalImageData);
+            batch.images = Array.isArray(response.images) ? response.images : [response.images];
+            batch.index = 0;
+
+            // Save all images to temp folder (optional)
+            for (let i = 0; i < batch.images.length; i++) {
+                await saveImageToTempFolder(batch.images[i], `batch_${batch.idPrefix}_${i}.png`);
+            }
+
+
+            const finalImageData = batch.images[0];
             await ui.updateFinalPreviewFromData(finalImageData);
+
+            document.getElementById('batchNav').style.display = 'none';
+            ui.renderBatchControls(batch.images.length);
+
             const img = document.querySelector("#generationPreview img");
             img.dataset.originalWidth = img.style.width || img.getBoundingClientRect().width + "px";
             img.dataset.originalHeight = img.style.height || img.getBoundingClientRect().height + "px";
+
+
             await ui.updateGenerationStatus("completed");
         } else if (response.status === 'preview') {
             let base64Image;
