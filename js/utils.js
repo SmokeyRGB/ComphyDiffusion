@@ -118,7 +118,7 @@ const fixComfyUILatentPreview = async (comfyUIDir, previewDir) => {
       '            try:',
       '                preview_image = preview_bytes[1]',
       '                import os',
-      '                preview_path = os.path.join(previewDir, f"preview.{preview_format.lower()}")',
+      '                preview_path = os.path.join(' + JSON.stringify(previewDir) + ', f"preview.{preview_format.lower()}")',
       '                os.makedirs(' + JSON.stringify(previewDir) + ', exist_ok=True)',
       '                preview_image.save(preview_path)',
       '            except:',
