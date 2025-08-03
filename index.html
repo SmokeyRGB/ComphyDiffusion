@@ -74,13 +74,13 @@
     </div> -->
 
     <div class="lowerThird" id="lowerThird">
-      <div id="batchNav" style="display:none;justify-content:center;align-items:center;gap:8px;margin:6px 0;">
+      <div id="batchNav" style="display:flex;justify-content:center;align-items:center;gap:8px;margin:6px 0;     margin-bottom: 25px;">
         <sp-action-button id="batchPrev" quiet>◀</sp-action-button>
         <span id="batchCounter">1 / 1</span>
         <sp-action-button id="batchNext" quiet>▶</sp-action-button>
       </div>
-      <sp-overlay style="position: absolute; top: 20px;">
-        <sp-slider id="denoiseSlider" slot="trigger" label="Denoise" indeterminate variant="ramp" max="1.00" min="0.10" value="0.6" step="0.05" format-options="{
+      <sp-overlay style="position: absolute; top: 30px;">
+        <sp-slider id="denoiseSlider" size="s" slot="trigger" label="Denoise" indeterminate variant="ramp" max="1.00" min="0.10" value="0.6" step="0.05" format-options="{
           style: 'unit',
           unit: 'percent',
           width: '10px',

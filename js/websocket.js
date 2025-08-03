@@ -14,6 +14,10 @@ const batch = {
   idPrefix: Date.now() // unique per generation
 };
 
+const getBatch = () => {
+    return batch;
+}
+
 async function connectComfyUIWebsocket(pluginFolderPath) {
     // If already open or in process of connecting, do not create a new connection.
     if (websocket && (websocket.readyState === WebSocket.OPEN || websocket.readyState === WebSocket.CONNECTING)) {
@@ -103,21 +107,22 @@ async function handleWebsocketMessage(evt) {
             batch.images = Array.isArray(response.images) ? response.images : [response.images];
             batch.index = 0;
 
+            console.log("Batch images :", batch.images)
+
             // Save all images to temp folder (optional)
             for (let i = 0; i < batch.images.length; i++) {
-                await saveImageToTempFolder(batch.images[i], `batch_${batch.idPrefix}_${i}.png`);
+                await saveImageToTempFolder(batch.images[i].image_data, `batch_${batch.idPrefix}_${i}.png`);
             }
 
-
-            const finalImageData = batch.images[0];
+            const finalImageData = batch.images[0].image_data;
             await ui.updateFinalPreviewFromData(finalImageData);
 
-            document.getElementById('batchNav').style.display = 'none';
-            ui.renderBatchControls(batch.images.length);
+            //document.getElementById('batchNav').style.display = 'none';
+            await ui.renderBatchControls(batch.images.length, batch);
 
-            const img = document.querySelector("#generationPreview img");
-            img.dataset.originalWidth = img.style.width || img.getBoundingClientRect().width + "px";
-            img.dataset.originalHeight = img.style.height || img.getBoundingClientRect().height + "px";
+            // const img = document.querySelector("#generationPreview img");
+            // img.dataset.originalWidth = img.style.width || img.getBoundingClientRect().width + "px";
+            // img.dataset.originalHeight = img.style.height || img.getBoundingClientRect().height + "px";
 
 
             await ui.updateGenerationStatus("completed");
@@ -207,6 +212,7 @@ function sendCancelCommand() {
 }
 
 module.exports = {
+    getBatch,
     connectComfyUIWebsocket,
     startPythonServer,
     getWebsocket: () => websocket,

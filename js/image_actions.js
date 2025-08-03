@@ -7,6 +7,7 @@ const batchPlay = photoshop.action.batchPlay;
 const imaging = require("photoshop").imaging;
 const fs = require("uxp").storage.localFileSystem;
 const prompt_handeling = require('./prompt_handeling');
+const websocket = require('./websocket');
 const utils = require('./utils');
 const pngModule = require("../dist/bundle.js");
 
@@ -106,34 +107,99 @@ const loadSelection = async () => {
     }, { commandName: "Load Selection" });
 };
 
-/* Paste the temporary image file (temp_image_preview.png) as a layer */
-const pasteLayer = async () => {
-    return photoshop.core.executeAsModal(async () => {
-        try {
-            
-            // Retrieve the temporary file (creating or overwriting it as needed)
-            const tempFile = await dataFolderPath.getEntry("temp_image_preview.png", { overwrite: true });
-            const token = fs.createSessionToken(tempFile);
-            await batchPlay([
-                {
-                    _obj: "placeEvent",
-                    ID: 90,
-                    null: { _path: token, _kind: "local" },
-                    freeTransformCenterState: { _enum: "quadCenterState", _value: "QCSAverage" },
-                    offset: {
-                        _obj: "offset",
-                        horizontal: { _unit: "pixelsUnit", _value: 0 },
-                        vertical: { _unit: "pixelsUnit", _value: 0 }
-                    },
-                    replaceLayer: { _obj: "placeEvent", to: { _ref: "layer", _id: 90 } },
-                    _options: { dialogOptions: "dontDisplay" }
-                }
-            ], {});
-        } catch (e) {
-            console.log("Error whilst pasting Image as Layer: " + e);
-        }
-    }, { commandName: "Paste Image as Layer" });
-};
+
+
+// ------------------------------------------------------------------
+//  Insert the *whole* batch or a single index
+// ------------------------------------------------------------------
+async function insertBatchImages(batchObj, index = 0) {
+  const { images, idPrefix } = batchObj;
+  if (!images?.length) return;
+
+
+  // Insert the requested image (0 … n-1)
+  const img   = images[index];
+  const name  = `✨ ${idPrefix}_${index}`;
+  //console.log("Inserting image:", name, img.image_data);
+  await layerFromBase64(img.image_data, name);
+
+  await centerImage();
+  //await makeSmartObject();
+}
+
+/** * Converts a base64-encoded PNG image to a Photoshop layer.
+ * * This function decodes the base64 string, creates a PhotoshopImageData object,
+ * * and then creates a new layer in the active document with the image data.
+ * * @param {string} b64 - The base64-encoded PNG image data.
+ * * @param {string} [name='Comfy Result'] - The name of the layer to be created.
+ * * @returns {Promise<PhotoshopLayer>} A promise that resolves to the created Photoshop layer.
+ * * @throws Will throw an error if the base64 string is invalid or if the image data cannot be created. 
+ * */
+// ------------------------------------------------------------------
+// PNG base64  ➜  new pixel layer  (uses full UPNG.js)
+// ------------------------------------------------------------------
+async function layerFromBase64(b64, name = 'Comfy Result') {
+  return photoshop.core.executeAsModal(async () => {
+    const { Plugin } = require('../dist/bundle.js');
+    const UPNG = Plugin;
+
+    console.log("⏳ 1. Base64 length :", b64.length);
+
+    // 1. Base64 → ArrayBuffer
+    const urlSafe = b64.replace(/-/g, '+').replace(/_/g, '/'); // URL → standard
+    const pad     = urlSafe.length % 4;
+    const padded  = pad ? urlSafe.padEnd(urlSafe.length + (4 - pad), '=') : urlSafe;
+
+    const bin   = atob(padded);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; ++i) bytes[i] = bin.charCodeAt(i);
+    console.log("📐 Padding length:", padded.length % 4); // should be 0
+
+    let img;
+    try {
+    img = UPNG.decodeFromPNG_UPNG(bytes.buffer);      // or UPNG.decodePNG
+    console.log("✅ 3. PNG decoded  :", img.width, "×", img.height);
+    } catch (e) {
+    console.error("❌ 3. PNG decode failed", e);
+    throw e;
+    }
+
+    let rgba;
+    try {
+    rgba = new Uint8Array(UPNG.toRGBA8(img)[0]);
+    console.log("✅ 4. RGBA ready   :", rgba.length, "bytes");
+    } catch (e) {
+    console.error("❌ 4. RGBA extract failed", e);
+    throw e;
+    }
+
+    // 3. PhotoshopImageData
+    const imgData = await imaging.createImageDataFromBuffer(rgba, {
+      width:  img.width,
+      height: img.height,
+      components: 4,
+      colorSpace: 'RGB',
+      colorProfile: 'sRGB IEC61966-2.1',
+      chunky: true
+    });
+
+    // 4. blank pixel layer
+    await batchPlay([{
+      _obj: 'make',
+      _target: [{ _ref: 'layer' }],
+      using: { _obj: 'layer', name }
+    }], {});
+
+    // 5. push pixels
+    await imaging.putPixels({
+      layerID: app.activeDocument.activeLayers[0].id,
+      imageData: imgData,
+      replace: true
+    });
+
+    imgData.dispose();
+  }, { commandName: `Insert ${name}` });
+}
 
 /* Center the active layer on the canvas */
 const centerImage = async () => {
@@ -413,20 +479,22 @@ const insertAsLayer = async (insertAs, dataFolderPath) => {
     let prompt = await prompt_handeling.loadPrompt(dataFolderPath);
     let hadSelection = await utils.selectionActive();
 
-    let layerName = prompt['seed'] + "~" + prompt['positive'] + "~" + prompt['negative'] + "~" + prompt['steps'] + "~" + prompt['cfg'];
-
-    console.log("Inserting as Layer: " + layerName);
     // Save the user selection
     await saveSelection();
-    await pasteLayer();
-    await centerImage();
+    //await pasteLayer();
+    //await centerImage();
+    let batch = websocket.getBatch();
+    await insertBatchImages(batch, batch.index);
 
     // Embed generation info in layer name
+    let layerName = prompt['seed'] + "~" + prompt['positive'] + "~" + prompt['negative'] + "~" + prompt['steps'] + "~" + prompt['cfg'];
     await renameLayer(layerName);
-    await makeSmartObject();
+    //await makeSmartObject();
 
     // load JSON workflow from workflow_path
     let workflowData = await utils.loadWorkflow(workflow_path);
+
+    console.log("Inserted Batch Images: " + batch.index + " into the document. Now appending workflow/prompt data");
 
     // WIP: Embed metadata
     prompt_handeling.setLayerPromptData(app.activeDocument.activeLayers[0].id, prompt, workflowData);
@@ -463,7 +531,7 @@ const insertAsLayer = async (insertAs, dataFolderPath) => {
     // } else {
     //     
     // }
-    await renameLayer("✨ ComfyPhotoshop Layer");
+    await renameLayer("✨ ComPHy Layer");
 
 
     // WIP: Reload selection if it existed
@@ -623,6 +691,7 @@ const autoColorMatchSkinTones = async (refColorObj, targetColorObj) => {
       }, { commandName: "Custom Curves Adjustment" });
       
 };
+
 
 
 
@@ -912,20 +981,50 @@ const encodeToJPEG = async (rgbaData) => {
 
 
 /**
- * Encodes RGBA data to JPEG format and saves it to the specified file path.
- *
- * @param {Uint8Array} rgbaData - The RGBA data to be encoded to JPEG.
- * @param {string} filePath - The path where the JPEG file will be saved.
- * @returns {Promise<void>} A promise that resolves when the JPEG file has been successfully saved.
- * @throws {Error} Throws an error if there is an issue with encoding or saving the JPEG file.
+ * Encodes a raw RGBA buffer to JPEG and writes it to disk.
+ * @param {Uint8Array} rgbaBuffer – 4-channel buffer (width×height×4)
+ * @param {number} width
+ * @param {number} height
+ * @param {string} filePath
  */
-const encodeAndSaveJPEG = async (rgbaData, filePath) => {
+const encodeAndSaveJPEG = async (rgbaBuffer, width, height, filePath) => {
     try {
-        const jpegData = await encodeToJPEG(rgbaData);
-        console.log("Saving JPEG to:", filePath);
+        console.log("Encoding JPEG…", { width, height, bufferLength: rgbaBuffer.length });
+
+        // 1.  RGBA → RGB
+        const rgbData = new Uint8Array(width * height * 3);
+        for (let i = 0, j = 0; i < rgbaBuffer.length; i += 4, j += 3) {
+            rgbData[j]     = rgbaBuffer[i];     // R
+            rgbData[j + 1] = rgbaBuffer[i + 1]; // G
+            rgbData[j + 2] = rgbaBuffer[i + 2]; // B
+        }
+
+        // 2.  PhotoshopImageData for encoder
+        const imgData = await imaging.createImageDataFromBuffer(rgbData, {
+            width,
+            height,
+            components: 3,
+            colorSpace: 'RGB',
+            colorProfile: 'sRGB IEC61966-2.1',
+            chunky: true
+        });
+
+        // 3.  JPEG → base64
+        const jpegBase64 = await imaging.encodeImageData({
+            imageData: imgData,
+            base64: true
+        });
+
+        // 4.  base64 → bytes → file
+        const binaryStr = atob(jpegBase64);
+        const binaryData = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; ++i) {
+            binaryData[i] = binaryStr.charCodeAt(i);
+        }
+
         const file = await dataFolderPath.createFile(filePath, { overwrite: true });
-        await file.write(jpegData, { append: false });
-        console.log("JPEG saved: " + file.nativePath);
+        await file.write(binaryData);
+        console.log("JPEG saved:", file.nativePath);
     } catch (error) {
         console.error("Error saving JPEG:", error);
     }
@@ -933,43 +1032,33 @@ const encodeAndSaveJPEG = async (rgbaData, filePath) => {
 
 
 /**
- * Encodes an RGBA buffer to a PNG format and saves it to the specified file path.
- *
- * @param {Uint8Array} rgbaBuffer - The RGBA buffer containing image data.
- * @param {number} width - The width of the image.
- * @param {number} height - The height of the image.
- * @param {string} filePath - The file path where the PNG will be saved.
- * @returns {Promise<void>} - A promise that resolves when the PNG is successfully saved.
- * @throws {Error} - Throws an error if encoding or saving the PNG fails.
+ * Encodes a raw RGBA buffer to PNG and writes it to disk.
+ * @param {Uint8Array} rgbaBuffer – 4-channel buffer (width×height×4)
+ * @param {number} width
+ * @param {number} height
+ * @param {string} filePath
  */
 const encodeAndSavePNG = async (rgbaBuffer, width, height, filePath) => {
-    try {
-        console.log("Encoding PNG with UPNG.js...", { width, height, bufferLength: rgbaBuffer.length });
+  try {
+    console.log("Encoding PNG with UPNG.js…", { width, height, bufferLength: rgbaBuffer.length });
+    const start = performance.now();
 
-        start = performance.now();
+    // ✅ wrap in [ArrayBuffer] – UPNG requirement
+    const pngBinary = pngModule.Plugin.encodeToPNG_UPNG(
+      [rgbaBuffer.buffer],
+      width,
+      height,
+      0
+    );
 
-        // Encode PNG using bundled UPNG.js
-        const pngData = await encodeToPNG_UPNG(rgbaBuffer, width, height);
+    console.log("PNG encoded in", performance.now() - start, "ms");
 
-        console.log("PNG encoded in", performance.now() - start, "ms");
-
-        // Get UXP local filesystem
-        const uxp = require("uxp").storage.localFileSystem;
-
-        // Create PNG file in the designated folder
-        start = performance.now();
-        console.log("Saving PNG to:", dataFolderPath.nativePath);
-        const saveFile = await fs.createEntryWithUrl(dataFolderPath.nativePath + "/"+filePath, { overwrite: true });
-
-        // Write the encoded PNG data to the file
-        await saveFile.write(pngData, { append: false });
-
-        console.log("PNG saved successfully in", performance.now() - start, "ms:", saveFile.nativePath);
-
-        console.log("PNG saved successfully:", saveFile.nativePath);
-    } catch (error) {
-        console.error("Error saving PNG:", error);
-    }
+    const saveFile = await dataFolderPath.createFile(filePath, { overwrite: true });
+    await saveFile.write(new Uint8Array(pngBinary));
+    console.log("PNG saved:", saveFile.nativePath);
+  } catch (error) {
+    console.error("Error saving PNG:", error);
+  }
 };
 
 /**
@@ -1092,38 +1181,24 @@ const runNewExport = async (dataFolderPath) => {
             console.log("Extracted RGBA buffer in", performance.now() - start, "ms");
 
             //console.log("Extracted RGBA buffer:", rgbaData);
-
             // 4. Apply selection mask if a valid selection exists.
             start = performance.now();
-            let maskedBuffer = null;
-            if (mask == null)   {
-                //create a mask with all pixels selected
-                mask = new Array(height);
-                for (let i = 0; i < height; i++) {
-                    mask[i] = new Array(width).fill(255);
-                }
-            }
+            let rgbaBuffer = rgbaData;           // original RGBA
             if (mask) {
-                maskedBuffer = applySelectionMask(rgbaData, mask, width, height);
+                rgbaBuffer = applySelectionMask(rgbaData, mask, width, height);
             }
+            console.assert(rgbaBuffer.length === width * height * 4,
+                        'rgbaBuffer length is not RGBA-aligned');
             console.log("Applied selection mask in", performance.now() - start, "ms");
 
             // 5. Encode and save images.
             start = performance.now();
-            await encodeAndSaveJPEG(imageData, 'temp_image_rgb.jpg');
+            await encodeAndSaveJPEG(rgbaBuffer, width, height, 'temp_image_rgb.jpg');
             console.log("JPEG Export completed in", performance.now() - start, "ms");
 
             start = performance.now();
-            if (maskedBuffer) {
-                await encodeAndSavePNG(maskedBuffer, width, height, 'temp_image_inpaint.png');
-            }
-            else {
-
-                await fastSavePng(rgbaData, width, height, 'temp_image_inpaint.png');
-            }
+            await encodeAndSavePNG(rgbaBuffer, width, height, 'temp_image_inpaint.png');
             console.log("PNG Export completed in", performance.now() - start, "ms");
-
-            console.log("New export completed successfully.");
         } catch (error) {
             console.error("Error during new export:", error);
         }
@@ -1136,7 +1211,7 @@ module.exports = {
     createSelectionChannel,
     saveSelection,
     loadSelection,
-    pasteLayer,
+    insertBatchImages,
     centerImage,
     applyImageMask,
     makeSmartObject,

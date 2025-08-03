@@ -240,26 +240,28 @@ function attachZoomPanListeners(img) {
   document.addEventListener('pointerup', end);
 }
 
-function renderBatchControls(total) {
+async function renderBatchControls(total, batch) {
   const nav  = document.getElementById('batchNav');
   const prev = document.getElementById('batchPrev');
   const next = document.getElementById('batchNext');
   const cnt  = document.getElementById('batchCounter');
 
-  if (total <= 1) { nav.style.display = 'none'; return; }
+  if (total <= 1) { nav.style.display = 'flex'; return; }
 
   nav.style.display = 'flex';
   cnt.textContent = `1 / ${total}`;
 
-  prev.onclick = () => changeBatch(-1);
-  next.onclick = () => changeBatch(1);
+
+  prev.onclick = () => changeBatch(-1, batch);
+  next.onclick = () => changeBatch(1, batch);
 }
 
-async function changeBatch(delta) {
+async function changeBatch(delta, batch) {
   const n = batch.images.length;
   batch.index = (batch.index + delta + n) % n;  // wrap around
   const data = batch.images[batch.index];
-  await updateFinalPreviewFromData(data);
+  console.log(`Rendering batch ${batch.index + 1} / ${n}`);
+  await updateFinalPreviewFromData(data.image_data);
   const img = document.querySelector('#generationPreview img');
   img.dataset.originalWidth = img.style.width || img.getBoundingClientRect().width + 'px';
   img.dataset.originalHeight = img.style.height || img.getBoundingClientRect().height + 'px';
