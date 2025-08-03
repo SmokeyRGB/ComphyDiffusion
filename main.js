@@ -162,7 +162,7 @@ const getEmbeddedPrompt = async () => {
     console.log("LayerTree: " + layerTree);
     //console.log("Content: " + contents)
 
-    if (selectedLayer != undefined && layerType[0] == "✨ ComfyPhotoshop Layer") {
+    if (selectedLayer != undefined && layerType[0] == "✨ ComPHy Layer") {
 
         await imageActions.openSmartObject(selectedLayer.id)
 
@@ -191,7 +191,7 @@ const getEmbeddedPrompt = async () => {
 
     }
     else {
-        console.log("No Layer or no ComfyPhotoshop Layer selected. Couldn't get Prompt Info")
+        console.log("No Layer or no ComPHy Layer selected. Couldn't get Prompt Info")
 
         prompt = {
             'positive': "",
