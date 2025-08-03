@@ -53,7 +53,7 @@ The plugin will confirm this automatically when you finished setting it up. (Ref
 3. **Add Your Plugin:**
    - Open the UXP Developer Tools.
    - Click **Add Plugin**.
-   - Navigate to the folder where you cloned PhotoshopDiffusion and select `mainfest.json`.
+   - Navigate to the folder where you cloned ComPHy to and select `mainfest.json`.
    - Click **Load** next to the newly appeared plugin.
    
 **Important:** The plugin needs to be loaded from the UXP Developer Tools every time Photoshop is restarted. This is due to the limitations of Adobe.
