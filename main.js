@@ -129,7 +129,7 @@ photoshop.action.addNotificationListener([
 // Reset flag when a new document opens.
 photoshop.action.addNotificationListener([{ event: "newDocument" }], () => {
     console.log("New document opened. Creating temporary selection channel.")
-    documentChanged = false;
+    documentChanged = true;
     imageActions.createSelectionChannel();
 });
 
