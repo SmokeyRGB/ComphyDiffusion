@@ -296,29 +296,33 @@ function renderPromptTiles(data) {
   root.innerHTML = '';
 
   // ---- Positive tile ----
-  makeTile(root, 'Positive Prompt', data?.prompt?.positive ?? '', (val) => {
+  makeTile(root, 'Positive Prompt', data?.prompt?.positive ?? '', async (val) => {
     document.getElementById('positivePrompt').value = val;
-    
+    await savePrompt();
   });
 
   // ---- Negative tile ----
-  makeTile(root, 'Negative Prompt', data?.prompt?.negative ?? '', (val) => {
+  makeTile(root, 'Negative Prompt', data?.prompt?.negative ?? '', async (val) => {
     document.getElementById('negativePrompt').value = val;
+    await savePrompt();
   });
 
   // ---- Seed tile ----
-  makeTile(root, 'Seed', data?.prompt?.seed ?? '', (val) => {
+  makeTile(root, 'Seed', data?.prompt?.seed ?? '', async (val) => {
     document.getElementById('seed').value = val;
+    await savePrompt();
   });
 
   // ---- Steps tile ----
-  makeTile(root, 'Steps', data?.prompt?.steps ?? '', (val) => {
+  makeTile(root, 'Steps', data?.prompt?.steps ?? '', async (val) => {
     document.getElementById('steps').value = val;
+    await savePrompt();
   });
 
   // ---- CFG tile ----
-  makeTile(root, 'CFG', data?.prompt?.cfg ?? '', (val) => {
+  makeTile(root, 'CFG', data?.prompt?.cfg ?? '', async (val) => {
     document.getElementById('cfg').value = val;
+    await savePrompt();
   });
 
   // ---- Spacer ----
