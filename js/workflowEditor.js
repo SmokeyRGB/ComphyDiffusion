@@ -31,7 +31,7 @@ const save = async () => {
 
 /* ---------- public ---------- */
 async function refresh(workflow_path = "") {
-  if (!workflow_path || lastPath === workflow_path) return;
+  if (!workflow_path || workflow_path === "") return;
   lastPath = workflow_path;
   const file = await fs.getEntryWithUrl(workflow_path);
   workflowObj = JSON.parse(await file.read());
@@ -106,6 +106,7 @@ function render() {
         const inp = row.querySelector('sp-textfield');
 
         inp.addEventListener('input', async () => {
+            inp.value = inp.value.trim(); // trim whitespace
             setDeep(workflowObj[id].inputs, fullKey, inp.value)
             await save();
         });
@@ -114,8 +115,11 @@ function render() {
             row.querySelector('.pickBtn').addEventListener('click', async () => {
             const file = await require('uxp').storage.localFileSystem.getFileForOpening({ types: ['safetensors', 'ckpt', 'pth', 'json'] });
             if (file) {
-                inp.value = file.nativePath;
-                setDeep(workflowObj[id].inputs, fullKey, file.nativePath);
+                
+                const checkpointIndex = file.nativePath.split('.').length - 1;
+                const croppedPath = file.nativePath.split('\\checkpoints\\').pop();
+                inp.value = croppedPath;
+                setDeep(workflowObj[id].inputs, fullKey, croppedPath);
                 await save();
             }
             });
